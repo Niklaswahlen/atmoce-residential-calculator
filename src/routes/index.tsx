@@ -407,6 +407,16 @@ function Index() {
               </CardContent>
             </Card>
 
+            <SnowMeltCard
+              state={snowState}
+              onChange={setSnowState}
+              panels={params.panels}
+              wpPerPanel={params.wpPerPanel}
+              yieldPerKwp={params.yieldPerKwp}
+              buyPrice={params.buyPrice}
+              years={params.years}
+            />
+
             {/* Cashflow chart */}
             <Card>
               <CardHeader>
