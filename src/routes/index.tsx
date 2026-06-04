@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   CartesianGrid,
@@ -30,6 +30,13 @@ import {
 } from "@/components/ui/table";
 import { SYSTEMS, SYSTEM_ORDER, type SystemId } from "@/data/systems";
 import { calculate, fmtNum, fmtPct, fmtSek, type CalcParams } from "@/lib/calc";
+import { useSystemPrices, mergeSystems } from "@/lib/usePrices";
+import {
+  SnowMeltCard,
+  DEFAULT_SNOWMELT_STATE,
+  type SnowMeltState,
+} from "@/components/SnowMeltCard";
+import { calculateSnowMelt } from "@/lib/snowmelt";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -103,14 +110,43 @@ function NumField({
 function Index() {
   const [params, setParams] = useState<CalcParams>(DEFAULT_PARAMS);
   const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
+  const [snowState, setSnowState] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
 
-  const atmoce = SYSTEMS.atmoce;
-  const reference = SYSTEMS[referenceId];
+  const { data: livePrices } = useSystemPrices();
+  const systems = useMemo(() => mergeSystems(livePrices), [livePrices]);
+  const atmoce = systems.atmoce;
+  const reference = systems[referenceId];
 
   const set = <K extends keyof CalcParams>(k: K) => (v: number) =>
     setParams((p) => ({ ...p, [k]: v }));
 
-  const atmoceResult = useMemo(() => calculate(atmoce, params), [atmoce, params]);
+  // Snösmältnings-vinst — endast Atmoce
+  const snow = useMemo(
+    () =>
+      calculateSnowMelt({
+        locationId: snowState.locationId,
+        panels: params.panels,
+        wpPerPanel: params.wpPerPanel,
+        yieldPerKwp: params.yieldPerKwp,
+        buyPrice: params.buyPrice,
+        coverageFactor: snowState.coverageFactor,
+        meltPowerW: snowState.meltPowerW,
+        meltMinutesPerDay: snowState.meltMinutesPerDay,
+        mode: snowState.mode,
+      }),
+    [snowState, params.panels, params.wpPerPanel, params.yieldPerKwp, params.buyPrice],
+  );
+
+  const atmoceParams: CalcParams = {
+    ...params,
+    extraAnnualSavings: snow.totalNetBenefit,
+    extraAnnualKwh: snow.totalRecoveredKwh,
+  };
+
+  const atmoceResult = useMemo(
+    () => calculate(atmoce, atmoceParams),
+    [atmoce, atmoceParams],
+  );
   const refResult = useMemo(() => calculate(reference, params), [reference, params]);
 
   const chartData = useMemo(
@@ -156,8 +192,16 @@ function Index() {
                 produktion sida vid sida
               </p>
             </div>
-            <div className="hidden text-right font-mono text-sm text-primary-foreground/80 md:block">
-              {fmtNum(kWp, 2)} kWp · {params.years} år kalkyl
+            <div className="flex items-center gap-4">
+              <Link
+                to="/priser"
+                className="rounded-md bg-primary-foreground/10 px-3 py-2 text-sm font-medium hover:bg-primary-foreground/20"
+              >
+                Redigera priser
+              </Link>
+              <div className="hidden text-right font-mono text-sm text-primary-foreground/80 md:block">
+                {fmtNum(kWp, 2)} kWp · {params.years} år kalkyl
+              </div>
             </div>
           </div>
         </div>
