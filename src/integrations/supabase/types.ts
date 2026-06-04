@@ -14,7 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      system_prices: {
+        Row: {
+          ess_price: number
+          id: string
+          name: string
+          pv_price: number
+          updated_at: string
+        }
+        Insert: {
+          ess_price?: number
+          id: string
+          name: string
+          pv_price?: number
+          updated_at?: string
+        }
+        Update: {
+          ess_price?: number
+          id?: string
+          name?: string
+          pv_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
