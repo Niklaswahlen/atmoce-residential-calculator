@@ -385,7 +385,7 @@ function Index() {
                         }
                       />
                       <Tooltip
-                        formatter={(v: number) => fmtSek(v)}
+                        formatter={(v) => fmtSek(Number(v))}
                         labelFormatter={(l) => `År ${l}`}
                       />
                       <Legend />
@@ -422,7 +422,7 @@ function Index() {
                       <XAxis dataKey="year" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip
-                        formatter={(v: number) => `${fmtNum(v)} kWh`}
+                        formatter={(v) => `${fmtNum(Number(v))} kWh`}
                         labelFormatter={(l) => `År ${l}`}
                       />
                       <Legend />
