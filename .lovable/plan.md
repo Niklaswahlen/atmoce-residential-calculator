@@ -1,91 +1,113 @@
-## Mål
+## Översikt
 
-En enkelsidig webapp där användaren matar in grundparametrar för ett solenergisystem (14 paneler à 460 Wp = 6,44 kWp som default) och får en sida-vid-sida-jämförelse mellan **Atmoce** och ett valbart **referenssystem**. Fokus: ekonomi (LCOE, payback, IRR) och produktion över kalkyltiden.
+Bygger två nya saker ovanpå nuvarande kalkylator:
 
-## System (hårdkodad prislista 2026)
+1. **Prissida** (`/priser`) — lista alla 6 system med redigerbara PV/ESS-priser, sparas delat i Lovable Cloud.
+2. **Snösmältningsmodul** på huvudsidan — ortval, månadsvis vinst från snöfria paneler, jämförelse av Atmoce-styrlägen och kostnaden för smältningen.
 
-Hex systempriser läggs i `src/data/systems.ts` så de är lätta att redigera:
+## 1. Lovable Cloud — delat lager för priser
 
-| System | PV (SEK) | ESS (SEK) | Tot (SEK) |
-|---|---|---|---|
-| Atmoce | 62 918,75 | 60 335,16 | 123 253,91 |
-| Solis+Dyness Stack100 | 65 062,50 | 32 531,25 | 97 593,75 |
-| Sigenergy | 74 265,00 | 56 211,72 | 130 476,72 |
-| SAJ HS3 | 69 687,50 | 40 677,34 | 110 364,84 |
-| Solis + Qapasity | 65 062,50 | 47 937,50 | 113 000,00 |
-| Huawei (m. Optimerare) | 72 718,75 | 50 359,38 | 123 078,13 |
+Aktiverar Cloud. Skapar en tabell:
 
-Per system lagras även: garantitid växelriktare (år), garantitid batteri (år/cykler), specifik produktionsbonus (%, default 0 för referens, justerbart för Atmoce pga mikroväxelriktare/skuggtolerans), batterieffektivitet (round-trip %), och batterikapacitet (kWh). Default-värden sätts rimligt men kan ändras i koden.
+```text
+system_prices
+  id (system_id text, primary key — "atmoce" | "solis_dyness" | ...)
+  name text
+  pv_price numeric
+  ess_price numeric
+  updated_at timestamptz
+```
 
-## Input-parametrar (UI)
+- RLS på, **SELECT till anon+authenticated** (priser är offentliga), **UPDATE till authenticated**.
+- Seedas med dagens prislista (2026).
+- Server fn `getSystemPrices()` och `updateSystemPrice({id, pvPrice, essPrice})` (auth-skyddad).
+- Frontend hämtar priser via TanStack Query + `useSuspenseQuery`. Faller tillbaka till hårdkodade defaults i `src/data/systems.ts` om Cloud inte svarar.
 
-Vänsterpanel med formulärfält + sliders, gemensamma för båda systemen:
+## 2. Prissida `/priser`
 
-- **Anläggning**: Antal paneler (default 14), Wp/panel (default 460) → kWp beräknas
-- **Produktion**: Årsproduktion (kWh/kWp/år, default 950), Atmoce-bonus (%, default 5–8 — justerbart)
-- **Elpris**: Köppris (SEK/kWh), Spotpris sälj (SEK/kWh), Årlig prisökning (%)
-- **Användning**: Egenanvändning utan batteri (%), Egenanvändning med batteri (%), Batteri round-trip-verkningsgrad (%)
-- **Kalkyl**: Kalkyltid (år, default 25), Diskonteringsränta (% för LCOE/NPV), Årlig degradering paneler (%, default 0,5)
-- **Val av referenssystem**: dropdown (5 alternativ) — Atmoce är alltid System A
+- Ny route `src/routes/priser.tsx`.
+- Tabell: System | PV (kr) | ESS (kr) | Totalt (kr) | Uppdaterad.
+- Inline-redigering (klick → `Input` → spara-knapp) med optimistic update + `invalidateQueries`.
+- "Återställ till 2026-prislistan"-knapp.
+- Länk i header från `/`.
+- Kräver inloggning för att spara → enkel mejl/lösen-auth via `/auth` (under `_authenticated/priser` om det blir tydligare; alternativt visa "Logga in för att redigera"-CTA på publika sidan). **Default-val**: publik visning, redigering kräver login.
 
-## Beräkningar (ren funktion `calculate(system, params)`)
+## 3. Snösmältningsmodul
 
-För varje system per år `t = 1..N`:
-- Produktion `kWh_t = kWp × årsprod × (1 + bonus) × (1 − degradering)^(t−1)`
-- Egenanvänd el = kWh_t × egenanv% (med batteri) × batteri-ηrt
-- Såld el = kWh_t − egenanv
-- Besparing_t = egenanv × elpris_t + såld × spotpris_t (elpris_t räknas upp med prisökning)
-- Kassaflöde_t = Besparing_t (år 0 = −investering)
+### Datakälla per ort
 
-Nyckeltal:
-- **Total producerad kWh** över kalkyltiden
-- **Extra kWh från Atmoce** (Atmoce − referens)
-- **Payback** (år då kumulativ besparing ≥ investering, linjärt interpolerat)
-- **IRR** (Newton-Raphson på kassaflödesserien)
-- **LCOE** = (Investering + Σ drift-NPV) / Σ (kWh_t / (1+r)^t)  [drift = 0 i basversion, kan utökas]
-- **NPV @ diskontering**
+Hårdkodad tabell i `src/data/locations.ts` baserad på SMHI-typvärden:
 
-## UI / sidor
+```text
+LOCATIONS = [
+  { id, name, lat,
+    monthlySnowDays:   [12 tal]  // dagar/mån med snötäckta paneler
+    monthlyIrradiance: [12 tal]  // andel av årsproduktion per mån (0-1, summerar till 1)
+  }
+]
+```
 
-En route: `src/routes/index.tsx` (ersätter placeholder).
+Orter (initialt 8): Malmö, Göteborg, Jönköping, Stockholm, Karlstad, Sundsvall, Östersund, Kiruna.
+Värdena dokumenteras som "typvärden, kan justeras". Inga API-anrop.
 
-Layout:
-1. **Header** — titel "Solsystem-jämförelse 2026", undertext.
-2. **Input-panel** (vänster, sticky på desktop) — alla parametrar grupperade i kort.
-3. **Resultat** (höger):
-   - **Sida-vid-sida kort**: Atmoce vs Referens — investering, total produktion, total besparing, payback, IRR, LCOE.
-   - **Delta-rad**: "Atmoce ger X kWh mer / Y kr mer / Z år snabbare payback".
-   - **Graf**: Recharts LineChart — kumulativ kassaflöde över år för båda systemen + en streckad linje för investering. Andra graf: stapel för årlig produktion.
-   - **Parameterjämförelse-tabell**: garantitid växelriktare, garantitid batteri, batterikapacitet, round-trip-effektivitet, kr/Wp, kr/kWh.
+### Beräkning per månad (enkel modell)
 
-Allt beräknas reaktivt via `useMemo` när input ändras — ingen backend behövs.
+För månad `m` med dagar `D_m` och andel av årsproduktion `f_m`:
 
-## Designriktning
+```text
+dagsproduktion_m = (årsprod_kWh × f_m) / dagar_i_månaden
+förlust_m_kWh    = snödagar_m × dagsproduktion_m × täckningsgrad
+```
 
-Ren, teknisk B2B-känsla — mörk topp/ljus bakgrund, generösa siffror, mono-font för nyckeltal. Atmoce-kolumnen får accent-färg (grön) för att visuellt markera fördelen. Tailwind + shadcn (Card, Tabs, Input, Select, Slider, Table) som redan finns.
+`täckningsgrad` = hur stor andel av panelytan som faktiskt är täckt en snödag (default 0,8, justerbart).
+
+### Atmoce-styrlägen
+
+Användaren väljer mellan tre lägen (radio):
+
+- **Ingen snösmältning** — referensfall, ingen extra vinst, ingen elkostnad.
+- **Optimerad** — smälter bara månader där `(vinst − kostnad)` är positiv och över en tröskel. Vinsten räknas månad-för-månad.
+- **Full** — smälter alla månader med snödagar > 0.
+
+Endast Atmoce kan styra per panel — referenssystem visas som "Ej möjligt" (eller marginell vinst om strängväxelriktare med optimerare som Huawei, men default 0).
+
+### Energi- och kostnadsberäkning för smältning
+
+Per panel och dag: `200 W × 0,25 h = 0,05 kWh`.
+Per månad: `paneler × 0,05 kWh × snödagar_m`.
+Kostnad: `energi_m × köppris` (samma som ekonomikalkylen).
+Vinst: `återvunnen kWh × köppris` (eller spotpris för exporterad andel, samma egenanvändningsfördelning).
+
+### Visualisering
+
+Ny `SnowMeltCard`-sektion på `/`:
+
+- Toppinfo: ort-dropdown, panelantal (från befintlig input), styrläge-radio, täckningsgrad-slider.
+- Tabell + stapeldiagram (12 månader): snödagar, återvunna kWh, åtgången smält-kWh, nettonytta (kr).
+- Sammanfattning under tabellen:
+  - Total extra produktion (kWh/år) tack vare snösmältning
+  - Total smält-energi (kWh/år) och kostnad (kr/år)
+  - **Nettovinst snösmältning (kr/år)** + på kalkyltiden
+- Textruta: "Styrning Atmoce: per-panel via mikroväxelriktare, schemalagd uppvärmning 200 W × 15 min/dag på snödagar via Atmoce-appen".
+
+Nettovinsten matas in i huvudberäkningen som extra årlig besparing för Atmoce, vilket påverkar payback/IRR/LCOE.
 
 ## Filer som skapas/ändras
 
-- `src/data/systems.ts` — prislista + per-system-default (garanti, batteri-kWh, etc.)
-- `src/lib/calc.ts` — rena beräkningsfunktioner (LCOE, IRR, payback, produktion per år)
-- `src/components/InputPanel.tsx` — alla parameterfält
-- `src/components/ResultCards.tsx` — Atmoce vs referens-kort
-- `src/components/ComparisonChart.tsx` — Recharts kumulativ besparing
-- `src/components/ParameterTable.tsx` — teknisk jämförelse
-- `src/routes/index.tsx` — sätter ihop allt, ersätter placeholder
-- `src/routes/__root.tsx` — uppdatera title/description meta
+- `src/data/locations.ts` — orter + typvärden
+- `src/lib/snowmelt.ts` — ren beräkningsfunktion
+- `src/components/SnowMeltCard.tsx`
+- `src/routes/priser.tsx` — prislista + redigering
+- `src/lib/prices.functions.ts` — server fns (get/update)
+- migrationsfil för `system_prices`-tabellen + RLS + seed
+- `src/data/systems.ts` — behåll som fallback, exportera typer
+- `src/routes/index.tsx` — sidlänk till `/priser`, integrera SnowMeltCard, använd Cloud-priser
+- `src/lib/calc.ts` — addera valfri `extraAnnualSavings`-parameter
 
-## Tekniska detaljer
+## Tekniska noteringar
 
-- Bunda `recharts` (`bun add recharts`) — redan vanlig i shadcn-stack.
-- All state lokalt med `useState` + `useMemo`. Inga server-funktioner, ingen Lovable Cloud.
-- Siffror formateras `sv-SE` med `Intl.NumberFormat` (mellanslag som tusentalsavgränsare, SEK).
-- IRR-implementation: iterativ Newton-Raphson, fallback till bisektion om den divergerar.
+- Allt UI på svenska, samma designspråk som idag.
+- Snösmältnings-energin räknas på **dagligt schema** (200 W × 15 min) endast under månader/dagar med snö enligt orten.
+- Prissida och snösmältning är två oberoende leveranser men levereras i samma iteration.
 
-## Ej med i denna iteration (kan läggas till senare)
-
-- PDF-export
-- Sparade scenarier (kräver inloggning/Cloud)
-- Faktisk timdata / soltimme-simulering — vi använder årssnitt
-
-Säg till om något ska justeras (t.ex. default-värden för Atmoce-bonus, garantitider, eller om PDF-export ska in direkt) så bygger jag.
+Säg till om något ska justeras, t.ex. fler orter, andra default-täckningsgrader, eller om prisredigering ska vara helt öppen (utan login).
