@@ -12,6 +12,10 @@ export interface CalcParams {
   years: number;
   discountRate: number; // 0-1
   degradation: number; // 0-1 per år
+  /** Extra årlig besparing (kr) som adderas till varje års kassaflöde — t.ex. snösmältning. */
+  extraAnnualSavings?: number;
+  /** Extra årlig produktion (kWh) som adderas till total produktion — t.ex. snösmältning. */
+  extraAnnualKwh?: number;
 }
 
 export interface YearRow {
@@ -64,17 +68,19 @@ export function calculate(system: SystemSpec, p: CalcParams): CalcResult {
     const priceFactor = Math.pow(1 + p.priceInflation, t - 1);
     const buy = p.buyPrice * priceFactor;
     const sell = p.sellPrice * priceFactor;
-    const savings = selfUsed * buy + exported * sell;
+    const extraSavings = (p.extraAnnualSavings ?? 0) * priceFactor;
+    const savings = selfUsed * buy + exported * sell + extraSavings;
+    const extraKwh = p.extraAnnualKwh ?? 0;
 
     cum += savings;
-    totalProduction += production;
+    totalProduction += production + extraKwh;
     totalSavings += savings;
     cashflows.push(savings);
     npv += savings / Math.pow(1 + p.discountRate, t);
 
     rows.push({
       year: t,
-      production,
+      production: production + extraKwh,
       selfUsed,
       exported,
       savings,
