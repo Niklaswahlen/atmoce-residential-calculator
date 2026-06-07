@@ -29,7 +29,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SYSTEMS, SYSTEM_ORDER, type SystemId } from "@/data/systems";
-import { calculate, fmtNum, fmtPct, fmtSek, type CalcParams } from "@/lib/calc";
+import {
+  calculate,
+  fmtNum,
+  fmtPct,
+  fmtSek,
+  getReplacementYears,
+  INVERTER_REPLACEMENT_COST,
+  type CalcParams,
+} from "@/lib/calc";
 import { useSystemPrices, mergeSystems } from "@/lib/usePrices";
 import {
   SnowMeltCard,
@@ -111,6 +119,7 @@ function Index() {
   const [params, setParams] = useState<CalcParams>(DEFAULT_PARAMS);
   const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
   const [snowState, setSnowState] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
+  const [refReplacements, setRefReplacements] = useState<number>(1);
 
   const { data: livePrices } = useSystemPrices();
   const systems = useMemo(() => mergeSystems(livePrices), [livePrices]);
@@ -141,13 +150,18 @@ function Index() {
     ...params,
     extraAnnualSavings: snow.totalNetBenefit,
     extraAnnualKwh: snow.totalRecoveredKwh,
+    inverterReplacements: 0,
   };
 
   const atmoceResult = useMemo(
     () => calculate(atmoce, atmoceParams),
     [atmoce, atmoceParams],
   );
-  const refResult = useMemo(() => calculate(reference, params), [reference, params]);
+  const refParams: CalcParams = { ...params, inverterReplacements: refReplacements };
+  const refResult = useMemo(
+    () => calculate(reference, refParams),
+    [reference, refParams],
+  );
 
   const chartData = useMemo(
     () =>
@@ -158,6 +172,20 @@ function Index() {
       })),
     [atmoceResult, refResult, reference.short],
   );
+
+  const npvChartData = useMemo(() => {
+    const zero = {
+      year: 0,
+      Atmoce: Math.round(-atmoceResult.investment),
+      [reference.short]: Math.round(-refResult.investment),
+    };
+    const rows = atmoceResult.rows.map((r, i) => ({
+      year: r.year,
+      Atmoce: Math.round(r.cumulativeNpv),
+      [reference.short]: Math.round(refResult.rows[i].cumulativeNpv),
+    }));
+    return [zero, ...rows];
+  }, [atmoceResult, refResult, reference.short]);
 
   const productionData = useMemo(
     () =>
@@ -177,6 +205,10 @@ function Index() {
       : null;
 
   const kWp = (params.panels * params.wpPerPanel) / 1000;
+  const refReplacementYears = useMemo(
+    () => getReplacementYears(params.years, refReplacements),
+    [params.years, refReplacements],
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -416,6 +448,142 @@ function Index() {
               buyPrice={params.buyPrice}
               years={params.years}
             />
+
+            {/* Inverter replacement module */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Växelriktarbyten</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Atmoce har {atmoce.inverterWarrantyYears} års produktgaranti på
+                  sina mikroväxelriktare. Traditionella system har ofta kortare
+                  garanti, vilket innebär en eller flera bytena under kalkyltiden.
+                  Varje byte räknas som {fmtSek(INVERTER_REPLACEMENT_COST)} ink.
+                  moms.
+                </p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>System</TableHead>
+                      <TableHead className="text-right">Garanti</TableHead>
+                      <TableHead className="text-center">Antal byten</TableHead>
+                      <TableHead className="text-right">Bytesår</TableHead>
+                      <TableHead className="text-right">Total kostnad</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">{atmoce.name}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">
+                        {atmoce.inverterWarrantyYears} år
+                      </TableCell>
+                      <TableCell className="text-center font-mono">0</TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        —
+                      </TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">
+                        {fmtSek(0)}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">{reference.name}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">
+                        {reference.inverterWarrantyYears} år
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Select
+                          value={String(refReplacements)}
+                          onValueChange={(v) => setRefReplacements(Number(v))}
+                        >
+                          <SelectTrigger className="mx-auto w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0</SelectItem>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">
+                        {refReplacementYears.length === 0
+                          ? "—"
+                          : refReplacementYears.map((y) => `År ${y}`).join(", ")}
+                      </TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">
+                        {fmtSek(refResult.totalReplacementCost)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Cumulative NPV chart — like reference image */}
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  Ackumulerat nuvärde över {params.years} år
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={npvChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis
+                        dataKey="year"
+                        tick={{ fontSize: 12 }}
+                        label={{
+                          value: "År",
+                          position: "insideBottom",
+                          offset: -4,
+                        }}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(v: number) =>
+                          Math.abs(v) >= 1000
+                            ? `${Math.round(v / 1000)}k`
+                            : `${v}`
+                        }
+                        label={{
+                          value: "Ackumulerat nuvärde (kr)",
+                          angle: -90,
+                          position: "insideLeft",
+                          style: { textAnchor: "middle" },
+                        }}
+                      />
+                      <Tooltip
+                        formatter={(v) => fmtSek(Number(v))}
+                        labelFormatter={(l) => `År ${l}`}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="Atmoce"
+                        stroke="var(--atmoce)"
+                        strokeWidth={2.5}
+                        dot={{ r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey={reference.short}
+                        stroke="var(--reference)"
+                        strokeWidth={2.5}
+                        dot={{ r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Startar på −investering år 0 och adderar varje års diskonterade
+                  nettokassaflöde. Växelriktarbyten dras av som negativa
+                  kassaflöden de år de inträffar.
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Cashflow chart */}
             <Card>

@@ -16,6 +16,8 @@ export interface CalcParams {
   extraAnnualSavings?: number;
   /** Extra årlig produktion (kWh) som adderas till total produktion — t.ex. snösmältning. */
   extraAnnualKwh?: number;
+  /** Antal växelriktarbyten under kalkyltiden (0, 1 eller 2). */
+  inverterReplacements?: number;
 }
 
 export interface YearRow {
@@ -25,6 +27,10 @@ export interface YearRow {
   exported: number;
   savings: number;
   cumulativeCashflow: number;
+  /** Bytekostnad detta år (positivt = utgift). */
+  replacementCost: number;
+  /** Ackumulerat diskonterat nuvärde (kr), inkluderar investering år 0. */
+  cumulativeNpv: number;
 }
 
 export interface CalcResult {
@@ -37,6 +43,18 @@ export interface CalcResult {
   npv: number;
   lcoe: number; // SEK/kWh
   rows: YearRow[];
+  /** År där växelriktarbyte sker. */
+  replacementYears: number[];
+  /** Total odiscontterad bytekostnad. */
+  totalReplacementCost: number;
+}
+
+export const INVERTER_REPLACEMENT_COST = 25_000;
+
+export function getReplacementYears(years: number, replacements: number): number[] {
+  if (replacements <= 0) return [];
+  if (replacements === 1) return [Math.round(years / 2)];
+  return [Math.round(years / 3), Math.round((2 * years) / 3)];
 }
 
 export function calculate(system: SystemSpec, p: CalcParams): CalcResult {
@@ -49,6 +67,12 @@ export function calculate(system: SystemSpec, p: CalcParams): CalcResult {
   let totalSavings = 0;
   const cashflows: number[] = [-investment];
   let npv = -investment;
+  let cumNpv = -investment;
+
+  const replacements = p.inverterReplacements ?? 0;
+  const replacementYears = getReplacementYears(p.years, replacements);
+  const replacementSet = new Set(replacementYears);
+  let totalReplacementCost = 0;
 
   for (let t = 1; t <= p.years; t++) {
     const degr = Math.pow(1 - p.degradation, t - 1);
@@ -72,11 +96,17 @@ export function calculate(system: SystemSpec, p: CalcParams): CalcResult {
     const savings = selfUsed * buy + exported * sell + extraSavings;
     const extraKwh = p.extraAnnualKwh ?? 0;
 
-    cum += savings;
+    const replacementCost = replacementSet.has(t) ? INVERTER_REPLACEMENT_COST : 0;
+    totalReplacementCost += replacementCost;
+    const netCashflow = savings - replacementCost;
+
+    cum += netCashflow;
     totalProduction += production + extraKwh;
     totalSavings += savings;
-    cashflows.push(savings);
-    npv += savings / Math.pow(1 + p.discountRate, t);
+    cashflows.push(netCashflow);
+    const discounted = netCashflow / Math.pow(1 + p.discountRate, t);
+    npv += discounted;
+    cumNpv += discounted;
 
     rows.push({
       year: t,
@@ -85,6 +115,8 @@ export function calculate(system: SystemSpec, p: CalcParams): CalcResult {
       exported,
       savings,
       cumulativeCashflow: cum,
+      replacementCost,
+      cumulativeNpv: cumNpv,
     });
   }
 
@@ -107,7 +139,12 @@ export function calculate(system: SystemSpec, p: CalcParams): CalcResult {
     const prod = kWp * p.yieldPerKwp * (1 + system.productionBonus) * degr;
     discountedKwh += prod / Math.pow(1 + p.discountRate, t);
   }
-  const lcoe = discountedKwh > 0 ? investment / discountedKwh : 0;
+  let discountedReplacements = 0;
+  for (const yr of replacementYears) {
+    discountedReplacements += INVERTER_REPLACEMENT_COST / Math.pow(1 + p.discountRate, yr);
+  }
+  const lcoe =
+    discountedKwh > 0 ? (investment + discountedReplacements) / discountedKwh : 0;
 
   const irr = calculateIrr(cashflows);
 
@@ -121,6 +158,8 @@ export function calculate(system: SystemSpec, p: CalcParams): CalcResult {
     npv,
     lcoe,
     rows,
+    replacementYears,
+    totalReplacementCost,
   };
 }
 
