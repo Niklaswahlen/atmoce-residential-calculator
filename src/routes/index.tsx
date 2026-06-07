@@ -490,6 +490,17 @@ function Index() {
               years={params.years}
             />
 
+            <PanelLevelBonusCard
+              atmoce={atmoce}
+              panels={params.panels}
+              wpPerPanel={params.wpPerPanel}
+              yieldPerKwp={params.yieldPerKwp}
+              buyPrice={params.buyPrice}
+              sellPrice={params.sellPrice}
+              selfUseShare={params.selfUseWithBattery}
+              years={params.years}
+            />
+
             {/* Inverter replacement module */}
             <Card>
               <CardHeader>
@@ -564,12 +575,23 @@ function Index() {
             {/* Cumulative NPV chart — like reference image */}
             <Card>
               <CardHeader>
-                <CardTitle>
-                  Ackumulerat nuvärde över {params.years} år
-                </CardTitle>
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle>
+                    Ackumulerat nuvärde över {params.years} år
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGeneratePdf}
+                    disabled={pdfLoading}
+                  >
+                    <Download className="mr-1.5" />
+                    {pdfLoading ? "Genererar…" : "Sammanfattning som PDF"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="h-80 w-full">
+                <div ref={npvChartRef} className="h-80 w-full bg-card">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={npvChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
