@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -32,6 +32,8 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { LOCATIONS } from "@/data/locations";
 import { calculateSnowMelt, type SnowMeltMode } from "@/lib/snowmelt";
 import { fmtNum, fmtSek } from "@/lib/calc";
@@ -71,6 +73,7 @@ export function SnowMeltCard({
   buyPrice,
   years,
 }: Props) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const result = useMemo(
     () =>
       calculateSnowMelt({
@@ -101,7 +104,7 @@ export function SnowMeltCard({
 
   return (
     <Card className="border-l-4 border-l-atmoce">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle>Snösmältning · Atmoce panelnivå-styrning</CardTitle>
@@ -112,6 +115,22 @@ export function SnowMeltCard({
               vs. elkostnad per månad.
             </p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDetailsOpen((v) => !v)}
+            className="shrink-0"
+          >
+            {detailsOpen ? (
+              <>
+                Dölj detaljer <ChevronUp className="ml-1.5 h-4 w-4" />
+              </>
+            ) : (
+              <>
+                Visa detaljer <ChevronDown className="ml-1.5 h-4 w-4" />
+              </>
+            )}
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -219,72 +238,76 @@ export function SnowMeltCard({
           extra produktion från Atmoce-styrd snösmältning.
         </p>
 
-        {/* Chart */}
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(v) => `${fmtNum(Number(v))} kWh`} />
-              <Legend />
-              <Bar dataKey="Återvunnet" fill="var(--atmoce)" />
-              <Bar dataKey="Smältning" fill="var(--reference)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {detailsOpen && (
+          <>
+            {/* Chart */}
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v) => `${fmtNum(Number(v))} kWh`} />
+                  <Legend />
+                  <Bar dataKey="Återvunnet" fill="var(--atmoce)" />
+                  <Bar dataKey="Smältning" fill="var(--reference)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
-        {/* Month table */}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Månad</TableHead>
-              <TableHead className="text-right">Snödagar</TableHead>
-              <TableHead className="text-right">Återvunnet (kWh)</TableHead>
-              <TableHead className="text-right">Smält-el (kWh)</TableHead>
-              <TableHead className="text-right">Kostnad</TableHead>
-              <TableHead className="text-right">Netto</TableHead>
-              <TableHead className="text-right">Aktiverad</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {result.rows.map((r) => (
-              <TableRow key={r.month} className={r.applied ? "" : "opacity-50"}>
-                <TableCell className="font-medium">{r.month}</TableCell>
-                <TableCell className="text-right font-mono">{r.snowDays}</TableCell>
-                <TableCell className="text-right font-mono">
-                  {fmtNum(r.potentialKwh, 0)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {fmtNum(r.meltKwh, 1)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {fmtSek(r.meltCost)}
-                </TableCell>
-                <TableCell
-                  className={`text-right font-mono font-semibold ${
-                    r.netBenefit >= 0 ? "text-atmoce" : "text-destructive"
-                  }`}
-                >
-                  {fmtSek(r.netBenefit)}
-                </TableCell>
-                <TableCell className="text-right text-xs">
-                  {r.applied ? "Ja" : "Nej"}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            {/* Month table */}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Månad</TableHead>
+                  <TableHead className="text-right">Snödagar</TableHead>
+                  <TableHead className="text-right">Återvunnet (kWh)</TableHead>
+                  <TableHead className="text-right">Smält-el (kWh)</TableHead>
+                  <TableHead className="text-right">Kostnad</TableHead>
+                  <TableHead className="text-right">Netto</TableHead>
+                  <TableHead className="text-right">Aktiverad</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {result.rows.map((r) => (
+                  <TableRow key={r.month} className={r.applied ? "" : "opacity-50"}>
+                    <TableCell className="font-medium">{r.month}</TableCell>
+                    <TableCell className="text-right font-mono">{r.snowDays}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {fmtNum(r.potentialKwh, 0)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {fmtNum(r.meltKwh, 1)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {fmtSek(r.meltCost)}
+                    </TableCell>
+                    <TableCell
+                      className={`text-right font-mono font-semibold ${
+                        r.netBenefit >= 0 ? "text-atmoce" : "text-destructive"
+                      }`}
+                    >
+                      {fmtSek(r.netBenefit)}
+                    </TableCell>
+                    <TableCell className="text-right text-xs">
+                      {r.applied ? "Ja" : "Nej"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
-        <div className="rounded-md bg-muted/60 p-3 text-xs text-muted-foreground">
-          <strong className="text-foreground">Styrlägen:</strong>{" "}
-          <em>Ingen</em> = ingen snösmältning aktiv (referensfall). {" "}
-          <em>Optimerad</em> = Atmoce-appen aktiverar smältning endast de månader
-          där solinstrålningen gör nettonyttan positiv. {" "}
-          <em>Full</em> = smältning körs på samtliga snödagar oavsett ekonomi. {" "}
-          Endast Atmoce (mikroväxelriktare) kan styra värme per panel — traditionella
-          strängväxelriktare saknar denna funktion.
-        </div>
+            <div className="rounded-md bg-muted/60 p-3 text-xs text-muted-foreground">
+              <strong className="text-foreground">Styrlägen:</strong>{" "}
+              <em>Ingen</em> = ingen snösmältning aktiv (referensfall). {" "}
+              <em>Optimerad</em> = Atmoce-appen aktiverar smältning endast de månader
+              där solinstrålningen gör nettonyttan positiv. {" "}
+              <em>Full</em> = smältning körs på samtliga snödagar oavsett ekonomi. {" "}
+              Endast Atmoce (mikroväxelriktare) kan styra värme per panel — traditionella
+              strängväxelriktare saknar denna funktion.
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
