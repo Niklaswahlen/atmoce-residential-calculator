@@ -73,6 +73,7 @@ export function SnowMeltCard({
   buyPrice,
   years,
 }: Props) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const result = useMemo(
     () =>
       calculateSnowMelt({
