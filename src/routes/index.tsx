@@ -154,6 +154,11 @@ function Index() {
     [snowState, params.panels, params.wpPerPanel, params.yieldPerKwp, params.buyPrice],
   );
 
+  const atmoceWithBonus = useMemo(
+    () => ({ ...atmoce, productionBonus: panelBonusPct / 100 }),
+    [atmoce, panelBonusPct],
+  );
+
   const atmoceParams: CalcParams = {
     ...params,
     extraAnnualSavings: snow.totalNetBenefit,
@@ -162,8 +167,8 @@ function Index() {
   };
 
   const atmoceResult = useMemo(
-    () => calculate(atmoce, atmoceParams),
-    [atmoce, atmoceParams],
+    () => calculate(atmoceWithBonus, atmoceParams),
+    [atmoceWithBonus, atmoceParams],
   );
   const refParams: CalcParams = { ...params, inverterReplacements: refReplacements };
   const refResult = useMemo(
