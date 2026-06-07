@@ -247,7 +247,7 @@ function Index() {
         <div className="mx-auto max-w-7xl px-6 py-6">
           <div className="flex items-baseline justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
+              <h1 className="font-display text-2xl font-semibold tracking-tight">
                 Solsystem-jämförelse 2026
               </h1>
               <p className="mt-1 text-sm text-primary-foreground/70">
