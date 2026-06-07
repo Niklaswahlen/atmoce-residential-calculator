@@ -29,7 +29,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SYSTEMS, SYSTEM_ORDER, type SystemId } from "@/data/systems";
-import { calculate, fmtNum, fmtPct, fmtSek, type CalcParams } from "@/lib/calc";
+import {
+  calculate,
+  fmtNum,
+  fmtPct,
+  fmtSek,
+  getReplacementYears,
+  INVERTER_REPLACEMENT_COST,
+  type CalcParams,
+} from "@/lib/calc";
 import { useSystemPrices, mergeSystems } from "@/lib/usePrices";
 import {
   SnowMeltCard,
@@ -111,6 +119,7 @@ function Index() {
   const [params, setParams] = useState<CalcParams>(DEFAULT_PARAMS);
   const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
   const [snowState, setSnowState] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
+  const [refReplacements, setRefReplacements] = useState<number>(1);
 
   const { data: livePrices } = useSystemPrices();
   const systems = useMemo(() => mergeSystems(livePrices), [livePrices]);
@@ -141,13 +150,18 @@ function Index() {
     ...params,
     extraAnnualSavings: snow.totalNetBenefit,
     extraAnnualKwh: snow.totalRecoveredKwh,
+    inverterReplacements: 0,
   };
 
   const atmoceResult = useMemo(
     () => calculate(atmoce, atmoceParams),
     [atmoce, atmoceParams],
   );
-  const refResult = useMemo(() => calculate(reference, params), [reference, params]);
+  const refParams: CalcParams = { ...params, inverterReplacements: refReplacements };
+  const refResult = useMemo(
+    () => calculate(reference, refParams),
+    [reference, refParams],
+  );
 
   const chartData = useMemo(
     () =>
@@ -158,6 +172,20 @@ function Index() {
       })),
     [atmoceResult, refResult, reference.short],
   );
+
+  const npvChartData = useMemo(() => {
+    const zero = {
+      year: 0,
+      Atmoce: Math.round(-atmoceResult.investment),
+      [reference.short]: Math.round(-refResult.investment),
+    };
+    const rows = atmoceResult.rows.map((r, i) => ({
+      year: r.year,
+      Atmoce: Math.round(r.cumulativeNpv),
+      [reference.short]: Math.round(refResult.rows[i].cumulativeNpv),
+    }));
+    return [zero, ...rows];
+  }, [atmoceResult, refResult, reference.short]);
 
   const productionData = useMemo(
     () =>
@@ -177,6 +205,10 @@ function Index() {
       : null;
 
   const kWp = (params.panels * params.wpPerPanel) / 1000;
+  const refReplacementYears = useMemo(
+    () => getReplacementYears(params.years, refReplacements),
+    [params.years, refReplacements],
+  );
 
   return (
     <div className="min-h-screen bg-background">
