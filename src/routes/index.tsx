@@ -125,6 +125,7 @@ function Index() {
   const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
   const [snowState, setSnowState] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
   const [refReplacements, setRefReplacements] = useState<number>(1);
+  const [panelBonusPct, setPanelBonusPct] = useState<number>(8);
   const [pdfLoading, setPdfLoading] = useState(false);
   const npvChartRef = useRef<HTMLDivElement | null>(null);
 
