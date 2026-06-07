@@ -104,7 +104,7 @@ export function SnowMeltCard({
 
   return (
     <Card className="border-l-4 border-l-atmoce">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle>Snösmältning · Atmoce panelnivå-styrning</CardTitle>
@@ -115,6 +115,22 @@ export function SnowMeltCard({
               vs. elkostnad per månad.
             </p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDetailsOpen((v) => !v)}
+            className="shrink-0"
+          >
+            {detailsOpen ? (
+              <>
+                Dölj detaljer <ChevronUp className="ml-1.5 h-4 w-4" />
+              </>
+            ) : (
+              <>
+                Visa detaljer <ChevronDown className="ml-1.5 h-4 w-4" />
+              </>
+            )}
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
