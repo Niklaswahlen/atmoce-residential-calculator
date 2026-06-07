@@ -1,20 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtNum, fmtPct, fmtSek } from "@/lib/calc";
-import type { SystemSpec } from "@/data/systems";
 
 interface Props {
-  atmoce: SystemSpec;
+  bonusPct: number;
+  onBonusChange: (n: number) => void;
   panels: number;
   wpPerPanel: number;
   yieldPerKwp: number;
   buyPrice: number;
   sellPrice: number;
-  selfUseShare: number; // genomsnittlig egenanv-andel
+  selfUseShare: number;
   years: number;
 }
 
 export function PanelLevelBonusCard({
-  atmoce,
+  bonusPct,
+  onBonusChange,
   panels,
   wpPerPanel,
   yieldPerKwp,
@@ -25,7 +26,7 @@ export function PanelLevelBonusCard({
 }: Props) {
   const kWp = (panels * wpPerPanel) / 1000;
   const baseProd = kWp * yieldPerKwp;
-  const extraKwhYear1 = baseProd * atmoce.productionBonus;
+  const extraKwhYear1 = baseProd * (bonusPct / 100);
   const blendedPrice = selfUseShare * buyPrice + (1 - selfUseShare) * sellPrice;
   const extraSavingsYear1 = extraKwhYear1 * blendedPrice;
   const extraSavingsLifetime = extraSavingsYear1 * years;
@@ -41,15 +42,34 @@ export function PanelLevelBonusCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
-          <div>
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">
-              Årsproduktions-bonus
-            </div>
-            <div className="font-display text-5xl font-semibold tabular-nums text-atmoce">
-              +{fmtPct(atmoce.productionBonus, 0)}
-            </div>
+        {/* Slider */}
+        <div className="rounded-lg border border-atmoce/20 bg-card/60 p-4">
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="panel-bonus" className="text-sm font-medium text-foreground">
+              Produktionsbonus
+            </label>
+            <span className="font-display text-3xl font-semibold tabular-nums text-atmoce">
+              +{fmtPct(bonusPct / 100, 0)}
+            </span>
           </div>
+          <input
+            id="panel-bonus"
+            type="range"
+            min={0}
+            max={20}
+            step={1}
+            value={bonusPct}
+            onChange={(e) => onBonusChange(Number(e.target.value))}
+            className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-atmoce/20 accent-atmoce"
+          />
+          <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground uppercase tracking-wide">
+            <span>0 %</span>
+            <span>10 %</span>
+            <span>20 %</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
           <div className="grid grid-cols-3 gap-6">
             <Stat
               label="Extra kWh / år"

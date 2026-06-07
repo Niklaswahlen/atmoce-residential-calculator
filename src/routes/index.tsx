@@ -125,6 +125,7 @@ function Index() {
   const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
   const [snowState, setSnowState] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
   const [refReplacements, setRefReplacements] = useState<number>(1);
+  const [panelBonusPct, setPanelBonusPct] = useState<number>(8);
   const [pdfLoading, setPdfLoading] = useState(false);
   const npvChartRef = useRef<HTMLDivElement | null>(null);
 
@@ -153,6 +154,11 @@ function Index() {
     [snowState, params.panels, params.wpPerPanel, params.yieldPerKwp, params.buyPrice],
   );
 
+  const atmoceWithBonus = useMemo(
+    () => ({ ...atmoce, productionBonus: panelBonusPct / 100 }),
+    [atmoce, panelBonusPct],
+  );
+
   const atmoceParams: CalcParams = {
     ...params,
     extraAnnualSavings: snow.totalNetBenefit,
@@ -161,8 +167,8 @@ function Index() {
   };
 
   const atmoceResult = useMemo(
-    () => calculate(atmoce, atmoceParams),
-    [atmoce, atmoceParams],
+    () => calculate(atmoceWithBonus, atmoceParams),
+    [atmoceWithBonus, atmoceParams],
   );
   const refParams: CalcParams = { ...params, inverterReplacements: refReplacements };
   const refResult = useMemo(
@@ -491,7 +497,8 @@ function Index() {
             />
 
             <PanelLevelBonusCard
-              atmoce={atmoce}
+              bonusPct={panelBonusPct}
+              onBonusChange={setPanelBonusPct}
               panels={params.panels}
               wpPerPanel={params.wpPerPanel}
               yieldPerKwp={params.yieldPerKwp}
