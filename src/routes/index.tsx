@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -45,6 +45,11 @@ import {
   type SnowMeltState,
 } from "@/components/SnowMeltCard";
 import { calculateSnowMelt } from "@/lib/snowmelt";
+import { PanelLevelBonusCard } from "@/components/PanelLevelBonusCard";
+import { Button } from "@/components/ui/button";
+import { generateSummaryPdf } from "@/lib/pdf";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -120,6 +125,8 @@ function Index() {
   const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
   const [snowState, setSnowState] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
   const [refReplacements, setRefReplacements] = useState<number>(1);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const npvChartRef = useRef<HTMLDivElement | null>(null);
 
   const { data: livePrices } = useSystemPrices();
   const systems = useMemo(() => mergeSystems(livePrices), [livePrices]);
@@ -210,13 +217,37 @@ function Index() {
     [params.years, refReplacements],
   );
 
+  const handleGeneratePdf = async () => {
+    setPdfLoading(true);
+    try {
+      await generateSummaryPdf({
+        atmoce,
+        reference,
+        atmoceResult,
+        refResult,
+        snow,
+        snowMode: snowState.mode,
+        years: params.years,
+        panels: params.panels,
+        wpPerPanel: params.wpPerPanel,
+        chartElement: npvChartRef.current,
+      });
+      toast.success("PDF genererad");
+    } catch (e) {
+      console.error(e);
+      toast.error("Kunde inte generera PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-primary text-primary-foreground">
         <div className="mx-auto max-w-7xl px-6 py-6">
           <div className="flex items-baseline justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
+              <h1 className="font-display text-2xl font-semibold tracking-tight">
                 Solsystem-jämförelse 2026
               </h1>
               <p className="mt-1 text-sm text-primary-foreground/70">
@@ -225,6 +256,16 @@ function Index() {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleGeneratePdf}
+                disabled={pdfLoading}
+                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+              >
+                <Download className="mr-1.5" />
+                {pdfLoading ? "Genererar…" : "Ladda ner PDF"}
+              </Button>
               <Link
                 to="/priser"
                 className="rounded-md bg-primary-foreground/10 px-3 py-2 text-sm font-medium hover:bg-primary-foreground/20"
@@ -449,6 +490,17 @@ function Index() {
               years={params.years}
             />
 
+            <PanelLevelBonusCard
+              atmoce={atmoce}
+              panels={params.panels}
+              wpPerPanel={params.wpPerPanel}
+              yieldPerKwp={params.yieldPerKwp}
+              buyPrice={params.buyPrice}
+              sellPrice={params.sellPrice}
+              selfUseShare={params.selfUseWithBattery}
+              years={params.years}
+            />
+
             {/* Inverter replacement module */}
             <Card>
               <CardHeader>
@@ -523,12 +575,23 @@ function Index() {
             {/* Cumulative NPV chart — like reference image */}
             <Card>
               <CardHeader>
-                <CardTitle>
-                  Ackumulerat nuvärde över {params.years} år
-                </CardTitle>
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle>
+                    Ackumulerat nuvärde över {params.years} år
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGeneratePdf}
+                    disabled={pdfLoading}
+                  >
+                    <Download className="mr-1.5" />
+                    {pdfLoading ? "Genererar…" : "Sammanfattning som PDF"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="h-80 w-full">
+                <div ref={npvChartRef} className="h-80 w-full bg-card">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={npvChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
