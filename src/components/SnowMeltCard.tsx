@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -32,6 +32,8 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { LOCATIONS } from "@/data/locations";
 import { calculateSnowMelt, type SnowMeltMode } from "@/lib/snowmelt";
 import { fmtNum, fmtSek } from "@/lib/calc";
