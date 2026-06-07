@@ -497,7 +497,8 @@ function Index() {
             />
 
             <PanelLevelBonusCard
-              atmoce={atmoce}
+              bonusPct={panelBonusPct}
+              onBonusChange={setPanelBonusPct}
               panels={params.panels}
               wpPerPanel={params.wpPerPanel}
               yieldPerKwp={params.yieldPerKwp}
