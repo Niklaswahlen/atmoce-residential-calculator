@@ -136,8 +136,10 @@ function PricesPage() {
         </Card>
 
         <p className="mt-4 text-xs text-muted-foreground">
-          Tips: ändringar tillämpas direkt i kalkylatorn. PV = panel-/montagepris,
-          ESS = batteri + tillhörande utrustning.
+          {t(
+            "Tips: ändringar tillämpas direkt i kalkylatorn. PV = panel-/montagepris, ESS = batteri + tillhörande utrustning.",
+            "Tip: changes apply directly in the calculator. PV = panel/mounting price, ESS = battery + related equipment.",
+          )}
         </p>
       </main>
     </div>
@@ -153,6 +155,7 @@ function PriceRow({
   onSave: (r: { id: string; pv_price: number; ess_price: number }) => void;
   saving: boolean;
 }) {
+  const t = useT();
   const [pv, setPv] = useState(row.pv_price);
   const [ess, setEss] = useState(row.ess_price);
   const dirty = pv !== row.pv_price || ess !== row.ess_price;
@@ -187,7 +190,7 @@ function PriceRow({
           disabled={!dirty || saving}
           onClick={() => onSave({ id: row.id, pv_price: pv, ess_price: ess })}
         >
-          Spara
+          {t("Spara", "Save")}
         </Button>
       </TableCell>
     </TableRow>
