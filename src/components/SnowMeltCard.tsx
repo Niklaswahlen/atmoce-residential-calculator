@@ -37,6 +37,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { LOCATIONS } from "@/data/locations";
 import { calculateSnowMelt, type SnowMeltMode } from "@/lib/snowmelt";
 import { fmtNum, fmtSek } from "@/lib/calc";
+import { useT } from "@/lib/app-context";
 
 export interface SnowMeltState {
   locationId: string;
@@ -76,6 +77,7 @@ export function SnowMeltCard({
   years,
   compact = false,
 }: Props) {
+  const t = useT();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const result = useMemo(
     () =>
@@ -93,10 +95,12 @@ export function SnowMeltCard({
     [state, panels, wpPerPanel, yieldPerKwp, buyPrice],
   );
 
+  const recoveredLabel = t("Återvunnet", "Recovered");
+  const meltingLabel = t("Smältning", "Melting");
   const chartData = result.rows.map((r) => ({
     month: r.month,
-    Återvunnet: Math.round(r.potentialKwh),
-    Smältning: Math.round(r.meltKwh),
+    [recoveredLabel]: Math.round(r.potentialKwh),
+    [meltingLabel]: Math.round(r.meltKwh),
   }));
 
   const set = <K extends keyof SnowMeltState>(k: K, v: SnowMeltState[K]) =>
@@ -110,12 +114,14 @@ export function SnowMeltCard({
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle>Snösmältning · Atmoce panelnivå-styrning</CardTitle>
+            <CardTitle>
+              {t("Snösmältning · Atmoce panelnivå-styrning", "Snow melting · Atmoce panel-level control")}
+            </CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Atmoce-mikroväxelriktarna kan aktivera varje panel individuellt som
-              värmare ({state.meltPowerW} W × {state.meltMinutesPerDay} min/dag ={" "}
-              {fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·dag). Här jämförs vinst
-              vs. elkostnad per månad.
+              {t(
+                `Atmoce-mikroväxelriktarna kan aktivera varje panel individuellt som värmare (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/dag = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·dag). Här jämförs vinst vs. elkostnad per månad.`,
+                `Atmoce microinverters can activate each panel individually as a heater (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/day = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·day). Here we compare gains vs. electricity cost per month.`,
+              )}
             </p>
           </div>
           {!compact && (
@@ -127,11 +133,11 @@ export function SnowMeltCard({
           >
             {detailsOpen ? (
               <>
-                Dölj detaljer <ChevronUp className="ml-1.5 h-4 w-4" />
+                {t("Dölj detaljer", "Hide details")} <ChevronUp className="ml-1.5 h-4 w-4" />
               </>
             ) : (
               <>
-                Visa detaljer <ChevronDown className="ml-1.5 h-4 w-4" />
+                {t("Visa detaljer", "Show details")} <ChevronDown className="ml-1.5 h-4 w-4" />
               </>
             )}
           </Button>
@@ -144,7 +150,7 @@ export function SnowMeltCard({
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">
-              Ort
+              {t("Ort", "Location")}
             </Label>
             <Select
               value={state.locationId}
@@ -165,7 +171,7 @@ export function SnowMeltCard({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">
-              Styrläge (Atmoce)
+              {t("Styrläge (Atmoce)", "Control mode (Atmoce)")}
             </Label>
             <Tabs
               value={state.mode}
@@ -173,13 +179,13 @@ export function SnowMeltCard({
             >
               <TabsList className="w-full">
                 <TabsTrigger value="none" className="flex-1 text-xs">
-                  Ingen
+                  {t("Ingen", "None")}
                 </TabsTrigger>
                 <TabsTrigger value="optimized" className="flex-1 text-xs">
-                  Optimerad
+                  {t("Optimerad", "Optimized")}
                 </TabsTrigger>
                 <TabsTrigger value="full" className="flex-1 text-xs">
-                  Full
+                  {t("Full", "Full")}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -187,7 +193,7 @@ export function SnowMeltCard({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">
-              Täckningsgrad · {Math.round(state.coverageFactor * 100)}%
+              {t("Täckningsgrad", "Coverage")} · {Math.round(state.coverageFactor * 100)}%
             </Label>
             <Slider
               min={0}
@@ -200,7 +206,7 @@ export function SnowMeltCard({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">
-              Smälttid · {state.meltMinutesPerDay} min/dag
+              {t("Smälttid", "Melt time")} · {state.meltMinutesPerDay} {t("min/dag", "min/day")}
             </Label>
             <Slider
               min={5}
@@ -216,33 +222,33 @@ export function SnowMeltCard({
         {/* Summary */}
         <div className="grid gap-3 rounded-lg border bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-4">
           <Summary
-            label="Återvunnen produktion / år"
+            label={t("Återvunnen produktion / år", "Recovered production / year")}
             value={`+${fmtNum(result.totalRecoveredKwh)} kWh`}
           />
           <Summary
-            label="Elåtgång smältning / år"
+            label={t("Elåtgång smältning / år", "Electricity used for melting / year")}
             value={`${fmtNum(result.totalMeltKwh, 1)} kWh`}
           />
           <Summary
-            label="Kostnad smältning / år"
+            label={t("Kostnad smältning / år", "Melting cost / year")}
             value={fmtSek(result.totalMeltCost)}
           />
           <Summary
-            label="Nettovinst / år"
+            label={t("Nettovinst / år", "Net gain / year")}
             value={fmtSek(result.totalNetBenefit)}
             positive={result.totalNetBenefit >= 0}
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Över kalkyltiden ({years} år):{" "}
+          {t(`Över kalkyltiden (${years} år):`, `Over the calculation period (${years} years):`)}{" "}
           <span className="font-mono font-semibold text-foreground">
             {fmtSek(result.totalNetBenefit * years)}
           </span>{" "}
-          extra värde och{" "}
+          {t("extra värde och", "extra value and")}{" "}
           <span className="font-mono font-semibold text-foreground">
             +{fmtNum(result.totalRecoveredKwh * years)} kWh
           </span>{" "}
-          extra produktion från Atmoce-styrd snösmältning.
+          {t("extra produktion från Atmoce-styrd snösmältning.", "extra production from Atmoce-controlled snow melting.")}
         </p>
 
         {!compact && detailsOpen && (
@@ -256,8 +262,8 @@ export function SnowMeltCard({
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip formatter={(v) => `${fmtNum(Number(v))} kWh`} />
                   <Legend />
-                  <Bar dataKey="Återvunnet" fill="var(--atmoce)" />
-                  <Bar dataKey="Smältning" fill="var(--reference)" />
+                  <Bar dataKey={recoveredLabel} fill="var(--atmoce)" />
+                  <Bar dataKey={meltingLabel} fill="var(--reference)" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -266,13 +272,13 @@ export function SnowMeltCard({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Månad</TableHead>
-                  <TableHead className="text-right">Snödagar</TableHead>
-                  <TableHead className="text-right">Återvunnet (kWh)</TableHead>
-                  <TableHead className="text-right">Smält-el (kWh)</TableHead>
-                  <TableHead className="text-right">Kostnad</TableHead>
-                  <TableHead className="text-right">Netto</TableHead>
-                  <TableHead className="text-right">Aktiverad</TableHead>
+                  <TableHead>{t("Månad", "Month")}</TableHead>
+                  <TableHead className="text-right">{t("Snödagar", "Snow days")}</TableHead>
+                  <TableHead className="text-right">{t("Återvunnet (kWh)", "Recovered (kWh)")}</TableHead>
+                  <TableHead className="text-right">{t("Smält-el (kWh)", "Melt electricity (kWh)")}</TableHead>
+                  <TableHead className="text-right">{t("Kostnad", "Cost")}</TableHead>
+                  <TableHead className="text-right">{t("Netto", "Net")}</TableHead>
+                  <TableHead className="text-right">{t("Aktiverad", "Active")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -297,7 +303,7 @@ export function SnowMeltCard({
                       {fmtSek(r.netBenefit)}
                     </TableCell>
                     <TableCell className="text-right text-xs">
-                      {r.applied ? "Ja" : "Nej"}
+                      {r.applied ? t("Ja", "Yes") : t("Nej", "No")}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -305,13 +311,11 @@ export function SnowMeltCard({
             </Table>
 
             <div className="rounded-md bg-muted/60 p-3 text-xs text-muted-foreground">
-              <strong className="text-foreground">Styrlägen:</strong>{" "}
-              <em>Ingen</em> = ingen snösmältning aktiv (referensfall). {" "}
-              <em>Optimerad</em> = Atmoce-appen aktiverar smältning endast de månader
-              där solinstrålningen gör nettonyttan positiv. {" "}
-              <em>Full</em> = smältning körs på samtliga snödagar oavsett ekonomi. {" "}
-              Endast Atmoce (mikroväxelriktare) kan styra värme per panel — traditionella
-              strängväxelriktare saknar denna funktion.
+              <strong className="text-foreground">{t("Styrlägen:", "Control modes:")}</strong>{" "}
+              {t(
+                "Ingen = ingen snösmältning aktiv (referensfall). Optimerad = Atmoce-appen aktiverar smältning endast de månader där solinstrålningen gör nettonyttan positiv. Full = smältning körs på samtliga snödagar oavsett ekonomi. Endast Atmoce (mikroväxelriktare) kan styra värme per panel — traditionella strängväxelriktare saknar denna funktion.",
+                "None = no snow melting active (reference case). Optimized = the Atmoce app activates melting only in months where solar irradiance makes the net benefit positive. Full = melting runs on every snow day regardless of economics. Only Atmoce (microinverters) can control heat per panel — traditional string inverters lack this function.",
+              )}
             </div>
           </>
         )}

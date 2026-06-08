@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtNum, fmtPct, fmtSek } from "@/lib/calc";
+import { useT } from "@/lib/app-context";
 
 interface Props {
   bonusPct: number;
@@ -24,6 +25,7 @@ export function PanelLevelBonusCard({
   selfUseShare,
   years,
 }: Props) {
+  const t = useT();
   const kWp = (panels * wpPerPanel) / 1000;
   const baseProd = kWp * yieldPerKwp;
   const extraKwhYear1 = baseProd * (bonusPct / 100);
@@ -35,9 +37,9 @@ export function PanelLevelBonusCard({
     <Card className="border-atmoce/40 bg-atmoce-soft/30">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-3">
-          <CardTitle>Bonus från panelnivå-styrning</CardTitle>
+          <CardTitle>{t("Bonus från panelnivå-styrning", "Panel-level control bonus")}</CardTitle>
           <span className="rounded-full bg-atmoce px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
-            Endast Atmoce
+            {t("Endast Atmoce", "Atmoce only")}
           </span>
         </div>
       </CardHeader>
@@ -46,7 +48,7 @@ export function PanelLevelBonusCard({
         <div className="rounded-lg border border-atmoce/20 bg-card/60 p-4">
           <div className="flex items-center justify-between gap-4">
             <label htmlFor="panel-bonus" className="text-sm font-medium text-foreground">
-              Produktionsbonus
+              {t("Produktionsbonus", "Production bonus")}
             </label>
             <span className="font-display text-3xl font-semibold tabular-nums text-atmoce">
               +{fmtPct(bonusPct / 100, 0)}
@@ -72,15 +74,15 @@ export function PanelLevelBonusCard({
         <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
           <div className="grid grid-cols-3 gap-6">
             <Stat
-              label="Extra kWh / år"
+              label={t("Extra kWh / år", "Extra kWh / year")}
               value={`${fmtNum(extraKwhYear1)} kWh`}
             />
             <Stat
-              label="Extra besparing år 1"
+              label={t("Extra besparing år 1", "Extra savings year 1")}
               value={fmtSek(extraSavingsYear1)}
             />
             <Stat
-              label={`Extra besparing över ${years} år`}
+              label={t(`Extra besparing över ${years} år`, `Extra savings over ${years} years`)}
               value={fmtSek(extraSavingsLifetime)}
             />
           </div>
@@ -88,30 +90,44 @@ export function PanelLevelBonusCard({
 
         <div className="rounded-lg border border-atmoce/20 bg-card/60 p-4 text-sm">
           <p className="font-medium text-foreground">
-            Varför ger mikroväxelriktare mer årsproduktion?
+            {t("Varför ger mikroväxelriktare mer årsproduktion?", "Why do microinverters yield more annual production?")}
           </p>
           <ul className="mt-2 space-y-1.5 text-muted-foreground">
             <li>
-              <span className="font-semibold text-foreground">Egen MPPT per panel.</span>{" "}
-              Skugga, smuts eller löv på en panel drar inte ner hela strängen — varje
-              panel arbetar på sin egen optimala punkt.
+              <span className="font-semibold text-foreground">
+                {t("Egen MPPT per panel.", "Dedicated MPPT per panel.")}
+              </span>{" "}
+              {t(
+                "Skugga, smuts eller löv på en panel drar inte ner hela strängen — varje panel arbetar på sin egen optimala punkt.",
+                "Shade, dirt or leaves on one panel don't drag down the whole string — each panel operates at its own optimal point.",
+              )}
             </li>
             <li>
-              <span className="font-semibold text-foreground">Ingen panel-mismatch.</span>{" "}
-              Små olikheter mellan paneler (ålder, tillverkningstolerans, temperatur)
-              kostar produktion i ett strängsystem — inte här.
+              <span className="font-semibold text-foreground">
+                {t("Ingen panel-mismatch.", "No panel mismatch.")}
+              </span>{" "}
+              {t(
+                "Små olikheter mellan paneler (ålder, tillverkningstolerans, temperatur) kostar produktion i ett strängsystem — inte här.",
+                "Small differences between panels (age, manufacturing tolerance, temperature) cost production in a string system — not here.",
+              )}
             </li>
             <li>
-              <span className="font-semibold text-foreground">Panelnivå-monitorering.</span>{" "}
-              Fel och produktionsbortfall syns samma dag istället för efter månader,
-              vilket minimerar förlorad intäkt.
+              <span className="font-semibold text-foreground">
+                {t("Panelnivå-monitorering.", "Panel-level monitoring.")}
+              </span>{" "}
+              {t(
+                "Fel och produktionsbortfall syns samma dag istället för efter månader, vilket minimerar förlorad intäkt.",
+                "Faults and lost production show up the same day instead of months later, minimizing lost revenue.",
+              )}
             </li>
           </ul>
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Bonusen är redan inräknad i Atmoces produktion och besparing i kalkylen.
-          Jämförelsesystem antas ha 0 % bonus, förutom Huawei med optimerare (4 %).
+          {t(
+            "Bonusen är redan inräknad i Atmoces produktion och besparing i kalkylen. Jämförelsesystem antas ha 0 % bonus, förutom Huawei med optimerare (4 %).",
+            "The bonus is already included in Atmoce's production and savings in the calculation. Reference systems are assumed to have 0% bonus, except Huawei with optimizers (4%).",
+          )}
         </p>
       </CardContent>
     </Card>
