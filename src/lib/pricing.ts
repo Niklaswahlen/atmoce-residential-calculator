@@ -16,9 +16,22 @@ export interface SystemConfig {
   name: string;
   short: string;
   battery_module_id: string | null;
+  battery_config_id: string | null;
   default_battery_modules: number;
   pv_override_inc_vat: number | null;
   ess_override_inc_vat: number | null;
+  sort_order: number;
+}
+
+export interface BatteryConfig {
+  id: string;
+  name: string;
+  short: string;
+  base_component_id: string | null;
+  module_component_id: string;
+  bms_component_id: string | null;
+  min_modules: number;
+  max_modules: number;
   sort_order: number;
 }
 
@@ -136,10 +149,11 @@ export interface ComputeArgs {
   settings: PriceSettings;
   panels: number;
   batteryModules: number;
+  batteryConfigs?: BatteryConfig[];
 }
 
 export function computeSystemPrice(args: ComputeArgs): SystemPriceResult {
-  const { config, lines, components, settings, panels, batteryModules } = args;
+  const { config, lines, components, settings, panels, batteryModules, batteryConfigs } = args;
   const byId = new Map(components.map((c) => [c.id, c] as const));
 
   const pv = computeSide(
@@ -165,7 +179,12 @@ export function computeSystemPrice(args: ComputeArgs): SystemPriceResult {
     config.ess_override_inc_vat,
   );
 
-  const batteryComponent = config.battery_module_id ? byId.get(config.battery_module_id) : undefined;
+  // Resolve battery kWh: prefer battery_config -> module, fall back to legacy battery_module_id.
+  const batteryConfig = config.battery_config_id
+    ? batteryConfigs?.find((b) => b.id === config.battery_config_id)
+    : undefined;
+  const moduleId = batteryConfig?.module_component_id ?? config.battery_module_id ?? null;
+  const batteryComponent = moduleId ? byId.get(moduleId) : undefined;
   const batteryKwh = (batteryComponent?.unit_kwh ?? 0) * batteryModules;
 
   return { pv, ess, batteryKwh, batteryModules };

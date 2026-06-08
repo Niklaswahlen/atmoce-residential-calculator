@@ -143,10 +143,15 @@ function Index() {
 
   const atmoceConfig = pricing?.systems.find((s) => s.id === "atmoce");
   const refConfig = pricing?.systems.find((s) => s.id === referenceId);
+  const moduleIdFor = (cfg: typeof atmoceConfig) => {
+    if (!cfg) return null;
+    const bc = pricing?.batteryConfigs.find((b) => b.id === cfg.battery_config_id);
+    return bc?.module_component_id ?? cfg.battery_module_id ?? null;
+  };
   const atmoceUnitKwh =
-    pricing?.components.find((c) => c.id === atmoceConfig?.battery_module_id)?.unit_kwh ?? 7;
+    pricing?.components.find((c) => c.id === moduleIdFor(atmoceConfig))?.unit_kwh ?? 7;
   const refUnitKwh =
-    pricing?.components.find((c) => c.id === refConfig?.battery_module_id)?.unit_kwh ?? 5.12;
+    pricing?.components.find((c) => c.id === moduleIdFor(refConfig))?.unit_kwh ?? 5.12;
 
   const atmoceModulesDefault = atmoceConfig?.default_battery_modules ?? 2;
   const atmoceModules = atmoceModulesState ?? atmoceModulesDefault;
@@ -168,6 +173,7 @@ function Index() {
             settings: pricing.settings,
             panels: params.panels,
             batteryModules,
+            batteryConfigs: pricing.batteryConfigs,
           })
         : SYSTEMS,
     [pricing, params.panels, batteryModules],

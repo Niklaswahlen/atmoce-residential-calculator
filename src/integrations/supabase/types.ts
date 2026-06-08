@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      battery_configs: {
+        Row: {
+          base_component_id: string | null
+          bms_component_id: string | null
+          id: string
+          max_modules: number
+          min_modules: number
+          module_component_id: string
+          name: string
+          short: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          base_component_id?: string | null
+          bms_component_id?: string | null
+          id: string
+          max_modules?: number
+          min_modules?: number
+          module_component_id: string
+          name: string
+          short: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          base_component_id?: string | null
+          bms_component_id?: string | null
+          id?: string
+          max_modules?: number
+          min_modules?: number
+          module_component_id?: string
+          name?: string
+          short?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battery_configs_base_component_id_fkey"
+            columns: ["base_component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battery_configs_bms_component_id_fkey"
+            columns: ["bms_component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battery_configs_module_component_id_fkey"
+            columns: ["module_component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       components: {
         Row: {
           category: string
@@ -130,6 +191,7 @@ export type Database = {
       }
       system_configs: {
         Row: {
+          battery_config_id: string | null
           battery_module_id: string | null
           default_battery_modules: number
           ess_override_inc_vat: number | null
@@ -141,6 +203,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          battery_config_id?: string | null
           battery_module_id?: string | null
           default_battery_modules?: number
           ess_override_inc_vat?: number | null
@@ -152,6 +215,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          battery_config_id?: string | null
           battery_module_id?: string | null
           default_battery_modules?: number
           ess_override_inc_vat?: number | null
@@ -163,6 +227,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "system_configs_battery_config_id_fkey"
+            columns: ["battery_config_id"]
+            isOneToOne: false
+            referencedRelation: "battery_configs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "system_configs_battery_module_id_fkey"
             columns: ["battery_module_id"]

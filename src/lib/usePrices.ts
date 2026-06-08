@@ -1,6 +1,7 @@
 import { SYSTEMS, type SystemId, type SystemSpec } from "@/data/systems";
 import {
   computeSystemPrice,
+  type BatteryConfig,
   type Component,
   type PriceSettings,
   type SystemConfig,
@@ -25,8 +26,9 @@ export function buildSystems(args: {
   settings: PriceSettings;
   panels: number;
   batteryModules?: BatteryModulesMap;
+  batteryConfigs?: BatteryConfig[];
 }): Record<SystemId, SystemSpec> {
-  const { components, systems, lines, settings, panels, batteryModules = {} } = args;
+  const { components, systems, lines, settings, panels, batteryModules = {}, batteryConfigs = [] } = args;
   const out: Record<SystemId, SystemSpec> = { ...SYSTEMS };
 
   for (const config of systems) {
@@ -40,6 +42,7 @@ export function buildSystems(args: {
       settings,
       panels,
       batteryModules: modules,
+      batteryConfigs,
     });
     out[id] = {
       ...out[id],
