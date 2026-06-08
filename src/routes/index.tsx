@@ -507,6 +507,7 @@ function Index() {
                 lcoe={atmoceResult.lcoe}
                 npv={atmoceResult.npv}
                 kWp={atmoceResult.kWp}
+                batteryKwh={atmoce.batteryKwh}
                 t={t}
               />
               <SystemCard
@@ -519,6 +520,7 @@ function Index() {
                 lcoe={refResult.lcoe}
                 npv={refResult.npv}
                 kWp={refResult.kWp}
+                batteryKwh={reference.batteryKwh}
                 t={t}
               />
             </div>
