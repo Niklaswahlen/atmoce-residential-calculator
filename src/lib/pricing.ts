@@ -60,6 +60,7 @@ export interface ResolvedLine {
   component: Component;
   qty: number;
   rowTotal: number; // qty * unit_price_ex_vat (ex moms)
+  source?: "manual" | "battery_config"; // origin of the line
 }
 
 export interface SidePrice {
@@ -108,8 +109,9 @@ function computeSide(
   vatPct: number,
   gtaPct: number,
   override: number | null,
+  injected: { component_id: string; qty_kind: QtyKind; qty_value: number }[] = [],
 ): SidePrice {
-  const resolved: ResolvedLine[] = lines
+  const manual: ResolvedLine[] = lines
     .filter((l) => l.side === side)
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((l) => {
@@ -129,8 +131,40 @@ function computeSide(
         },
         qty,
         rowTotal: qty * unit,
+        source: "manual" as const,
       };
     });
+
+  const injectedLines: ResolvedLine[] = injected.map((inj, idx) => {
+    const component = componentById.get(inj.component_id);
+    const qty = resolveQty(inj.qty_kind, inj.qty_value, panels, batteryModules);
+    const unit = component?.unit_price_ex_vat ?? 0;
+    return {
+      line: {
+        id: `injected-${side}-${idx}-${inj.component_id}`,
+        system_id: "",
+        component_id: inj.component_id,
+        side,
+        qty_kind: inj.qty_kind,
+        qty_value: inj.qty_value,
+        sort_order: -100 + idx,
+      },
+      component: component ?? {
+        id: inj.component_id,
+        name: "(saknas)",
+        category: "unknown",
+        side,
+        unit: "st",
+        unit_price_ex_vat: 0,
+        unit_kwh: null,
+      },
+      qty,
+      rowTotal: qty * unit,
+      source: "battery_config" as const,
+    };
+  });
+
+  const resolved = [...injectedLines, ...manual];
 
   const subtotal = resolved.reduce((s, r) => s + r.rowTotal, 0);
   const margin = subtotal * marginPct;
@@ -156,6 +190,22 @@ export function computeSystemPrice(args: ComputeArgs): SystemPriceResult {
   const { config, lines, components, settings, panels, batteryModules, batteryConfigs } = args;
   const byId = new Map(components.map((c) => [c.id, c] as const));
 
+  // Resolve battery config and build injected ESS lines (base + module + bms)
+  const batteryConfig = config.battery_config_id
+    ? batteryConfigs?.find((b) => b.id === config.battery_config_id)
+    : undefined;
+
+  const essInjected: { component_id: string; qty_kind: QtyKind; qty_value: number }[] = [];
+  if (batteryConfig) {
+    if (batteryConfig.base_component_id) {
+      essInjected.push({ component_id: batteryConfig.base_component_id, qty_kind: "fixed", qty_value: 1 });
+    }
+    essInjected.push({ component_id: batteryConfig.module_component_id, qty_kind: "per_battery_module", qty_value: 1 });
+    if (batteryConfig.bms_component_id) {
+      essInjected.push({ component_id: batteryConfig.bms_component_id, qty_kind: "fixed", qty_value: 1 });
+    }
+  }
+
   const pv = computeSide(
     lines,
     byId,
@@ -177,12 +227,9 @@ export function computeSystemPrice(args: ComputeArgs): SystemPriceResult {
     settings.vat_pct,
     settings.gta_ess_pct,
     config.ess_override_inc_vat,
+    essInjected,
   );
 
-  // Resolve battery kWh: prefer battery_config -> module, fall back to legacy battery_module_id.
-  const batteryConfig = config.battery_config_id
-    ? batteryConfigs?.find((b) => b.id === config.battery_config_id)
-    : undefined;
   const moduleId = batteryConfig?.module_component_id ?? config.battery_module_id ?? null;
   const batteryComponent = moduleId ? byId.get(moduleId) : undefined;
   const batteryKwh = (batteryComponent?.unit_kwh ?? 0) * batteryModules;
