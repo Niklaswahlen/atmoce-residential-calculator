@@ -47,7 +47,6 @@ import {
 import { calculateSnowMelt } from "@/lib/snowmelt";
 import { PanelLevelBonusCard } from "@/components/PanelLevelBonusCard";
 import { Button } from "@/components/ui/button";
-import { generateSummaryPdf } from "@/lib/pdf";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -226,6 +225,7 @@ function Index() {
   const handleGeneratePdf = async () => {
     setPdfLoading(true);
     try {
+      const { generateSummaryPdf } = await import("@/lib/pdf");
       await generateSummaryPdf({
         atmoce,
         reference,
