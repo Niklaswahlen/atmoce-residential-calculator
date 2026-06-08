@@ -38,6 +38,7 @@ import {
   type Side,
   type SystemConfig,
   type SystemLine,
+  type ResolvedLine,
 } from "@/lib/pricing";
 import { PRICING_KEY } from "@/lib/usePricing";
 
@@ -221,6 +222,7 @@ export function SystemConfigCard({ config, lines, components, settings, panels, 
           side="ess"
           systemId={config.id}
           lines={lines.filter((l) => l.side === "ess")}
+          injectedLines={result.ess.lines.filter((l) => l.source === "battery_config")}
           components={components}
           result={result.ess}
           panels={panels}
@@ -242,6 +244,7 @@ function SideTable({
   side,
   systemId,
   lines,
+  injectedLines,
   components,
   result,
   panels,
@@ -251,6 +254,7 @@ function SideTable({
   side: Side;
   systemId: string;
   lines: SystemLine[];
+  injectedLines?: ResolvedLine[];
   components: Component[];
   result: {
     subtotal: number;
@@ -336,6 +340,28 @@ function SideTable({
           </TableRow>
         </TableHeader>
         <TableBody>
+          {injectedLines?.map((r) => (
+            <TableRow key={r.line.id} className="bg-muted/30">
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{r.component.name}</span>
+                  <span className="rounded bg-atmoce/15 px-1.5 py-0.5 text-[10px] font-medium uppercase text-atmoce">
+                    {t("från batterikonfig", "from battery config")}
+                  </span>
+                </div>
+              </TableCell>
+              <TableCell className="text-xs text-muted-foreground">
+                {QTY_KINDS.find((k) => k.kind === r.line.qty_kind)?.sv}
+              </TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                {fmtNum(r.line.qty_value, 2)}
+              </TableCell>
+              <TableCell className="text-right font-mono tabular-nums">{fmtNum(r.qty, 2)}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums">{fmtSek(r.component.unit_price_ex_vat)}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums">{fmtSek(r.rowTotal)}</TableCell>
+              <TableCell />
+            </TableRow>
+          ))}
           {lines.map((line) => (
             <LineRow
               key={line.id}
