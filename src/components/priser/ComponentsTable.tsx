@@ -31,6 +31,8 @@ const CATEGORIES = [
   "microinverter",
   "string_inverter",
   "battery_module",
+  "battery_base",
+  "battery_bms",
   "mounting",
   "scaffolding",
   "cabling",
