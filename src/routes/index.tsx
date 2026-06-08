@@ -921,6 +921,7 @@ function SystemCard({
   lcoe,
   npv,
   kWp: _kWp,
+  batteryKwh,
   t,
 }: {
   title: string;
@@ -966,6 +967,12 @@ function SystemCard({
           <Metric label={t("Total produktion", "Total production")} value={`${fmtNum(production)} kWh`} />
           <Metric label={t("Total besparing", "Total savings")} value={fmtSek(savings)} />
           <Metric label="NPV" value={fmtSek(npv)} />
+          {typeof batteryKwh === "number" && (
+            <Metric
+              label={t("Batteri", "Battery")}
+              value={`${fmtNum(batteryKwh, 2)} kWh`}
+            />
+          )}
         </div>
       </CardContent>
     </Card>
