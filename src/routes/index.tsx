@@ -248,10 +248,10 @@ function Index() {
         wpPerPanel: params.wpPerPanel,
         chartElement: npvChartRef.current,
       });
-      toast.success("PDF genererad");
+      toast.success(t("PDF genererad", "PDF generated"));
     } catch (e) {
       console.error(e);
-      toast.error("Kunde inte generera PDF");
+      toast.error(t("Kunde inte generera PDF", "Could not generate PDF"));
     } finally {
       setPdfLoading(false);
     }
@@ -319,43 +319,43 @@ function Index() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  Produktion & elpris
+                  {t("Produktion & elpris", "Production & electricity price")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-3">
                 <NumField
-                  label="Årsprod."
+                  label={t("Årsprod.", "Annual prod.")}
                   value={params.yieldPerKwp}
                   onChange={set("yieldPerKwp")}
                   suffix="kWh/kWp"
                 />
                 <NumField
-                  label="Degradering"
+                  label={t("Degradering", "Degradation")}
                   value={params.degradation * 100}
                   onChange={(v) => set("degradation")(v / 100)}
                   step={0.1}
-                  suffix="%/år"
+                  suffix={t("%/år", "%/yr")}
                 />
                 <NumField
-                  label="Köppris"
+                  label={t("Köppris", "Buy price")}
                   value={params.buyPrice}
                   onChange={set("buyPrice")}
                   step={0.1}
                   suffix="kr/kWh"
                 />
                 <NumField
-                  label="Spotpris sälj"
+                  label={t("Spotpris sälj", "Spot sell price")}
                   value={params.sellPrice}
                   onChange={set("sellPrice")}
                   step={0.1}
                   suffix="kr/kWh"
                 />
                 <NumField
-                  label="Prisökning"
+                  label={t("Prisökning", "Price inflation")}
                   value={params.priceInflation * 100}
                   onChange={(v) => set("priceInflation")(v / 100)}
                   step={0.5}
-                  suffix="%/år"
+                  suffix={t("%/år", "%/yr")}
                 />
               </CardContent>
             </Card>
@@ -365,18 +365,18 @@ function Index() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  Användning
+                  {t("Användning", "Usage")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-3">
                 <NumField
-                  label="Egenanv. utan batteri"
+                  label={t("Egenanv. utan batteri", "Self-use w/o battery")}
                   value={params.selfUseNoBattery * 100}
                   onChange={(v) => set("selfUseNoBattery")(v / 100)}
                   suffix="%"
                 />
                 <NumField
-                  label="Egenanv. med batteri"
+                  label={t("Egenanv. med batteri", "Self-use w/ battery")}
                   value={params.selfUseWithBattery * 100}
                   onChange={(v) => set("selfUseWithBattery")(v / 100)}
                   suffix="%"
@@ -389,18 +389,18 @@ function Index() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  Kalkyl
+                  {t("Kalkyl", "Calculation")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-3">
                 <NumField
-                  label="Kalkyltid"
+                  label={t("Kalkyltid", "Period")}
                   value={params.years}
                   onChange={set("years")}
-                  suffix="år"
+                  suffix={t("år", "yrs")}
                 />
                 <NumField
-                  label="Diskontering"
+                  label={t("Diskontering", "Discount rate")}
                   value={params.discountRate * 100}
                   onChange={(v) => set("discountRate")(v / 100)}
                   step={0.5}
