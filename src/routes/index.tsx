@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
@@ -49,6 +49,8 @@ import { PanelLevelBonusCard } from "@/components/PanelLevelBonusCard";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
+import { AppHeader } from "@/components/AppHeader";
+import { useApp, useT } from "@/lib/app-context";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -120,9 +122,17 @@ function NumField({
 }
 
 function Index() {
+  const { mode } = useApp();
+  const t = useT();
+  const isSimple = mode === "simple";
   const [params, setParams] = useState<CalcParams>(DEFAULT_PARAMS);
   const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
-  const [snowState, setSnowState] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
+  const [snowStateAdv, setSnowStateAdv] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
+  // In simple mode snowmelt is always optimized.
+  const snowState: SnowMeltState = isSimple
+    ? { ...snowStateAdv, mode: "optimized" }
+    : snowStateAdv;
+  const setSnowState = setSnowStateAdv;
   const [refReplacements, setRefReplacements] = useState<number>(2);
   const [panelBonusPct, setPanelBonusPct] = useState<number>(8);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -249,42 +259,30 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-primary text-primary-foreground">
-        <div className="mx-auto max-w-7xl px-6 py-6">
-          <div className="flex items-baseline justify-between gap-4">
-            <div>
-              <h1 className="font-display text-2xl font-semibold tracking-tight">
-                Solsystem-jämförelse 2026
-              </h1>
-              <p className="mt-1 text-sm text-primary-foreground/70">
-                Atmoce mikroväxelriktare vs traditionella system — LCOE, payback &
-                produktion sida vid sida
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleGeneratePdf}
-                disabled={pdfLoading}
-                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-              >
-                <Download className="mr-1.5" />
-                {pdfLoading ? "Genererar…" : "Ladda ner PDF"}
-              </Button>
-              <Link
-                to="/priser"
-                className="rounded-md bg-primary-foreground/10 px-3 py-2 text-sm font-medium hover:bg-primary-foreground/20"
-              >
-                Redigera priser
-              </Link>
-              <div className="hidden text-right font-mono text-sm text-primary-foreground/80 md:block">
-                {fmtNum(kWp, 2)} kWp · {params.years} år kalkyl
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        subtitle={t("Solsystem-kalkylator", "Solar system calculator")}
+        right={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleGeneratePdf}
+              disabled={pdfLoading}
+            >
+              <Download className="mr-1.5" />
+              {pdfLoading
+                ? t("Genererar…", "Generating…")
+                : t("Ladda ner PDF", "Download PDF")}
+            </Button>
+            <a
+              href="/priser"
+              className="rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+            >
+              {t("Priser", "Prices")}
+            </a>
+          </>
+        }
+      />
 
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
@@ -293,23 +291,23 @@ function Index() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  Anläggning
+                  {t("Anläggning", "System size")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-3">
                 <NumField
-                  label="Antal paneler"
+                  label={t("Antal paneler", "Number of panels")}
                   value={params.panels}
                   onChange={set("panels")}
                 />
                 <NumField
-                  label="Wp/panel"
+                  label={t("Wp/panel", "Wp/panel")}
                   value={params.wpPerPanel}
                   onChange={set("wpPerPanel")}
                   suffix="W"
                 />
                 <div className="col-span-2 rounded-md bg-muted px-3 py-2 text-sm">
-                  <span className="text-muted-foreground">Total: </span>
+                  <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
                   <span className="font-mono font-semibold">
                     {fmtNum(kWp, 2)} kWp
                   </span>
@@ -317,6 +315,7 @@ function Index() {
               </CardContent>
             </Card>
 
+            {!isSimple && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
@@ -360,7 +359,9 @@ function Index() {
                 />
               </CardContent>
             </Card>
+            )}
 
+            {!isSimple && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
@@ -382,7 +383,9 @@ function Index() {
                 />
               </CardContent>
             </Card>
+            )}
 
+            {!isSimple && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
@@ -405,11 +408,12 @@ function Index() {
                 />
               </CardContent>
             </Card>
+            )}
 
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  Referenssystem
+                  {t("Referenssystem", "Reference system")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -494,8 +498,10 @@ function Index() {
               yieldPerKwp={params.yieldPerKwp}
               buyPrice={params.buyPrice}
               years={params.years}
+              compact={isSimple}
             />
 
+            {!isSimple && (
             <PanelLevelBonusCard
               bonusPct={panelBonusPct}
               onBonusChange={setPanelBonusPct}
@@ -507,8 +513,10 @@ function Index() {
               selfUseShare={params.selfUseWithBattery}
               years={params.years}
             />
+            )}
 
             {/* Inverter replacement module */}
+            {!isSimple && (
             <Card>
               <CardHeader>
                 <CardTitle>Växelriktarbyten</CardTitle>
@@ -578,8 +586,10 @@ function Index() {
                 </Table>
               </CardContent>
             </Card>
+            )}
 
             {/* Cumulative NPV chart — like reference image */}
+            {!isSimple && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-3">
@@ -654,11 +664,14 @@ function Index() {
                 </p>
               </CardContent>
             </Card>
+            )}
 
             {/* Cashflow chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Kumulativ besparing över {params.years} år</CardTitle>
+                <CardTitle>
+                  {t("Kumulativ besparing över", "Cumulative savings over")} {params.years} {t("år", "years")}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-80 w-full">
@@ -702,6 +715,7 @@ function Index() {
             </Card>
 
             {/* Production chart */}
+            {!isSimple && (
             <Card>
               <CardHeader>
                 <CardTitle>Årlig elproduktion (kWh)</CardTitle>
@@ -737,8 +751,10 @@ function Index() {
                 </div>
               </CardContent>
             </Card>
+            )}
 
             {/* Technical comparison */}
+            {!isSimple && (
             <Card>
               <CardHeader>
                 <CardTitle>Teknisk jämförelse</CardTitle>
@@ -815,13 +831,16 @@ function Index() {
                 </Table>
               </CardContent>
             </Card>
+            )}
 
+            {!isSimple && (
             <p className="text-xs text-muted-foreground">
               Priser inkl. 15 % grönt teknikavdrag enligt prislista 2026. LCOE
               beräknas med diskonterad produktion. IRR baseras på årliga
               kassaflöden vid given diskonteringsränta. Antaganden kan justeras i
               vänsterpanelen.
             </p>
+            )}
           </section>
         </div>
       </main>

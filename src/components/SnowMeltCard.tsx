@@ -62,6 +62,8 @@ interface Props {
   yieldPerKwp: number;
   buyPrice: number;
   years: number;
+  /** Compact view for end-customer: hides controls and detail toggle, shows summary only. */
+  compact?: boolean;
 }
 
 export function SnowMeltCard({
@@ -72,6 +74,7 @@ export function SnowMeltCard({
   yieldPerKwp,
   buyPrice,
   years,
+  compact = false,
 }: Props) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const result = useMemo(
@@ -115,6 +118,7 @@ export function SnowMeltCard({
               vs. elkostnad per månad.
             </p>
           </div>
+          {!compact && (
           <Button
             variant="ghost"
             size="sm"
@@ -131,10 +135,12 @@ export function SnowMeltCard({
               </>
             )}
           </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Controls */}
+        {!compact && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">
@@ -205,6 +211,7 @@ export function SnowMeltCard({
             />
           </div>
         </div>
+        )}
 
         {/* Summary */}
         <div className="grid gap-3 rounded-lg border bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -238,7 +245,7 @@ export function SnowMeltCard({
           extra produktion från Atmoce-styrd snösmältning.
         </p>
 
-        {detailsOpen && (
+        {!compact && detailsOpen && (
           <>
             {/* Chart */}
             <div className="h-64 w-full">
