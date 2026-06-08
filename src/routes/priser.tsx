@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/AppHeader";
 import { useT } from "@/lib/app-context";
-import { usePricingData } from "@/lib/usePricing";
+import { usePricingData, PRICING_KEY } from "@/lib/usePricing";
+import { supabase } from "@/integrations/supabase/client";
 import { GlobalSettingsCard } from "@/components/priser/GlobalSettingsCard";
 import { ComponentsTable } from "@/components/priser/ComponentsTable";
 import { SystemConfigCard } from "@/components/priser/SystemConfigCard";
@@ -30,6 +34,48 @@ function PricesPage() {
   const t = useT();
   const { data, isLoading, error } = usePricingData();
   const [panels, setPanels] = useState<number>(14);
+  const qc = useQueryClient();
+  const [newId, setNewId] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newShort, setNewShort] = useState("");
+
+  const createSystem = useMutation({
+    mutationFn: async () => {
+      const id = newId.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
+      if (!id || !newName.trim() || !newShort.trim()) {
+        throw new Error(t("Fyll i ID, namn och kort namn", "Fill in ID, name and short name"));
+      }
+      const maxSort = Math.max(0, ...(data?.systems.map((s) => s.sort_order) ?? [0]));
+      const { error } = await supabase.from("system_configs").insert({
+        id,
+        name: newName.trim(),
+        short: newShort.trim(),
+        sort_order: maxSort + 1,
+        default_battery_modules: 1,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(t("System skapat", "System created"));
+      setNewId(""); setNewName(""); setNewShort("");
+      qc.invalidateQueries({ queryKey: PRICING_KEY });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteSystem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: e1 } = await supabase.from("system_component_lines").delete().eq("system_id", id);
+      if (e1) throw e1;
+      const { error } = await supabase.from("system_configs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(t("System borttaget", "System deleted"));
+      qc.invalidateQueries({ queryKey: PRICING_KEY });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,16 +136,56 @@ function PricesPage() {
               </Card>
 
               {data.systems.map((sys) => (
-                <SystemConfigCard
-                  key={sys.id}
-                  config={sys}
-                  lines={data.lines.filter((l) => l.system_id === sys.id)}
-                  components={data.components}
-                  settings={data.settings}
-                  panels={panels}
-                  batteryConfigs={data.batteryConfigs}
-                />
+                <div key={sys.id} className="space-y-1">
+                  <SystemConfigCard
+                    config={sys}
+                    lines={data.lines.filter((l) => l.system_id === sys.id)}
+                    components={data.components}
+                    settings={data.settings}
+                    panels={panels}
+                    batteryConfigs={data.batteryConfigs}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        if (confirm(t(`Ta bort "${sys.name}"? Detta tar även bort alla rader.`, `Delete "${sys.name}"? This also removes all lines.`))) {
+                          deleteSystem.mutate(sys.id);
+                        }
+                      }}
+                    >
+                      {t("Ta bort system", "Delete system")}
+                    </Button>
+                  </div>
+                </div>
               ))}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">{t("Lägg till systemkonfiguration", "Add system configuration")}</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3 sm:grid-cols-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs uppercase text-muted-foreground">ID</Label>
+                    <Input value={newId} onChange={(e) => setNewId(e.target.value)} placeholder="t.ex. my_system" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs uppercase text-muted-foreground">{t("Namn", "Name")}</Label>
+                    <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs uppercase text-muted-foreground">{t("Kort namn", "Short")}</Label>
+                    <Input value={newShort} onChange={(e) => setNewShort(e.target.value)} />
+                  </div>
+                  <div className="flex items-end">
+                    <Button onClick={() => createSystem.mutate()} disabled={createSystem.isPending}>
+                      {t("Skapa", "Create")}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
               <p className="text-xs text-muted-foreground">
                 {t(
