@@ -14,6 +14,164 @@ export type Database = {
   }
   public: {
     Tables: {
+      components: {
+        Row: {
+          category: string
+          id: string
+          name: string
+          side: string
+          unit: string
+          unit_kwh: number | null
+          unit_price_ex_vat: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          id: string
+          name: string
+          side: string
+          unit?: string
+          unit_kwh?: number | null
+          unit_price_ex_vat?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          id?: string
+          name?: string
+          side?: string
+          unit?: string
+          unit_kwh?: number | null
+          unit_price_ex_vat?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      price_settings: {
+        Row: {
+          default_panels: number
+          default_wp_panel: number
+          gta_ess_pct: number
+          gta_pv_pct: number
+          id: string
+          margin_pct: number
+          updated_at: string
+          vat_pct: number
+        }
+        Insert: {
+          default_panels?: number
+          default_wp_panel?: number
+          gta_ess_pct?: number
+          gta_pv_pct?: number
+          id: string
+          margin_pct?: number
+          updated_at?: string
+          vat_pct?: number
+        }
+        Update: {
+          default_panels?: number
+          default_wp_panel?: number
+          gta_ess_pct?: number
+          gta_pv_pct?: number
+          id?: string
+          margin_pct?: number
+          updated_at?: string
+          vat_pct?: number
+        }
+        Relationships: []
+      }
+      system_component_lines: {
+        Row: {
+          component_id: string
+          id: string
+          qty_kind: string
+          qty_value: number
+          side: string
+          sort_order: number
+          system_id: string
+          updated_at: string
+        }
+        Insert: {
+          component_id: string
+          id?: string
+          qty_kind: string
+          qty_value?: number
+          side: string
+          sort_order?: number
+          system_id: string
+          updated_at?: string
+        }
+        Update: {
+          component_id?: string
+          id?: string
+          qty_kind?: string
+          qty_value?: number
+          side?: string
+          sort_order?: number
+          system_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_component_lines_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_component_lines_system_id_fkey"
+            columns: ["system_id"]
+            isOneToOne: false
+            referencedRelation: "system_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_configs: {
+        Row: {
+          battery_module_id: string | null
+          default_battery_modules: number
+          ess_override_inc_vat: number | null
+          id: string
+          name: string
+          pv_override_inc_vat: number | null
+          short: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          battery_module_id?: string | null
+          default_battery_modules?: number
+          ess_override_inc_vat?: number | null
+          id: string
+          name: string
+          pv_override_inc_vat?: number | null
+          short: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          battery_module_id?: string | null
+          default_battery_modules?: number
+          ess_override_inc_vat?: number | null
+          id?: string
+          name?: string
+          pv_override_inc_vat?: number | null
+          short?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_configs_battery_module_id_fkey"
+            columns: ["battery_module_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_prices: {
         Row: {
           ess_price: number
