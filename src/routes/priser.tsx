@@ -27,8 +27,68 @@ export const Route = createFileRoute("/priser")({
       },
     ],
   }),
-  component: PricesPage,
+  component: PricesPageGate,
 });
+
+const PRICES_PASSWORD = "S3nergia!";
+const PRICES_AUTH_KEY = "priser_authed";
+
+function PricesPageGate() {
+  const t = useT();
+  const [authed, setAuthed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(PRICES_AUTH_KEY) === "1";
+  });
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  if (authed) return <PricesPage />;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <AppHeader showModeToggle={false} />
+      <div className="mx-auto flex max-w-md flex-col gap-4 px-6 py-16">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("Lösenordsskyddad", "Password protected")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (password === PRICES_PASSWORD) {
+                  sessionStorage.setItem(PRICES_AUTH_KEY, "1");
+                  setAuthed(true);
+                } else {
+                  setError(t("Fel lösenord", "Wrong password"));
+                }
+              }}
+              className="flex flex-col gap-3"
+            >
+              <Label htmlFor="priser-password">
+                {t("Lösenord", "Password")}
+              </Label>
+              <Input
+                id="priser-password"
+                type="password"
+                autoFocus
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError(null);
+                }}
+              />
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
+              <Button type="submit">{t("Logga in", "Sign in")}</Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
 
 function PricesPage() {
   const t = useT();
