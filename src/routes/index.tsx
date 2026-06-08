@@ -498,8 +498,10 @@ function Index() {
               yieldPerKwp={params.yieldPerKwp}
               buyPrice={params.buyPrice}
               years={params.years}
+              compact={isSimple}
             />
 
+            {!isSimple && (
             <PanelLevelBonusCard
               bonusPct={panelBonusPct}
               onBonusChange={setPanelBonusPct}
@@ -511,8 +513,10 @@ function Index() {
               selfUseShare={params.selfUseWithBattery}
               years={params.years}
             />
+            )}
 
             {/* Inverter replacement module */}
+            {!isSimple && (
             <Card>
               <CardHeader>
                 <CardTitle>Växelriktarbyten</CardTitle>
@@ -582,8 +586,10 @@ function Index() {
                 </Table>
               </CardContent>
             </Card>
+            )}
 
             {/* Cumulative NPV chart — like reference image */}
+            {!isSimple && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-3">
@@ -658,11 +664,14 @@ function Index() {
                 </p>
               </CardContent>
             </Card>
+            )}
 
             {/* Cashflow chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Kumulativ besparing över {params.years} år</CardTitle>
+                <CardTitle>
+                  {t("Kumulativ besparing över", "Cumulative savings over")} {params.years} {t("år", "years")}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-80 w-full">
@@ -706,6 +715,7 @@ function Index() {
             </Card>
 
             {/* Production chart */}
+            {!isSimple && (
             <Card>
               <CardHeader>
                 <CardTitle>Årlig elproduktion (kWh)</CardTitle>
@@ -741,8 +751,10 @@ function Index() {
                 </div>
               </CardContent>
             </Card>
+            )}
 
             {/* Technical comparison */}
+            {!isSimple && (
             <Card>
               <CardHeader>
                 <CardTitle>Teknisk jämförelse</CardTitle>
@@ -819,13 +831,16 @@ function Index() {
                 </Table>
               </CardContent>
             </Card>
+            )}
 
+            {!isSimple && (
             <p className="text-xs text-muted-foreground">
               Priser inkl. 15 % grönt teknikavdrag enligt prislista 2026. LCOE
               beräknas med diskonterad produktion. IRR baseras på årliga
               kassaflöden vid given diskonteringsränta. Antaganden kan justeras i
               vänsterpanelen.
             </p>
+            )}
           </section>
         </div>
       </main>
