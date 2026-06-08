@@ -441,7 +441,7 @@ function Index() {
                   {t("Referenssystem", "Reference system")}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <Select
                   value={referenceId}
                   onValueChange={(v) => setReferenceId(v as SystemId)}
@@ -457,6 +457,24 @@ function Index() {
                     ))}
                   </SelectContent>
                 </Select>
+                {!isSimple && pricing && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <NumField
+                      label={t("Atmoce batterimoduler", "Atmoce battery modules")}
+                      value={atmoceModules}
+                      onChange={(v) => setBatteryModulesFor("atmoce", Math.round(v))}
+                      step={1}
+                      suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
+                    />
+                    <NumField
+                      label={t("Ref. batterimoduler", "Ref. battery modules")}
+                      value={refModules}
+                      onChange={(v) => setBatteryModulesFor(referenceId, Math.round(v))}
+                      step={1}
+                      suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </aside>
