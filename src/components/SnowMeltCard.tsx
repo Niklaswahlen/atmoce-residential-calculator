@@ -118,10 +118,15 @@ export function SnowMeltCard({
               {t("Snösmältning · Atmoce panelnivå-styrning", "Snow melting · Atmoce panel-level control")}
             </CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              {t(
-                `Atmoce-mikroväxelriktarna kan aktivera varje panel individuellt som värmare (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/dag = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·dag). Här jämförs vinst vs. elkostnad per månad.`,
-                `Atmoce microinverters can activate each panel individually as a heater (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/day = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·day). Here we compare gains vs. electricity cost per month.`,
-              )}
+              {compact
+                ? t(
+                    "Atmoce smälter snö per panel automatiskt — endast när det lönar sig. Resultat: mer producerad el under vintern.",
+                    "Atmoce melts snow per panel automatically — only when it pays off. Result: more electricity produced during winter.",
+                  )
+                : t(
+                    `Atmoce-mikroväxelriktarna kan aktivera varje panel individuellt som värmare (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/dag = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·dag). Här jämförs vinst vs. elkostnad per månad.`,
+                    `Atmoce microinverters can activate each panel individually as a heater (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/day = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·day). Here we compare gains vs. electricity cost per month.`,
+                  )}
             </p>
           </div>
           {!compact && (
