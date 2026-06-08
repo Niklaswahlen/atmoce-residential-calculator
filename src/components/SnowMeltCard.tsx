@@ -118,10 +118,15 @@ export function SnowMeltCard({
               {t("Snösmältning · Atmoce panelnivå-styrning", "Snow melting · Atmoce panel-level control")}
             </CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              {t(
-                `Atmoce-mikroväxelriktarna kan aktivera varje panel individuellt som värmare (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/dag = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·dag). Här jämförs vinst vs. elkostnad per månad.`,
-                `Atmoce microinverters can activate each panel individually as a heater (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/day = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·day). Here we compare gains vs. electricity cost per month.`,
-              )}
+              {compact
+                ? t(
+                    "Atmoce smälter snö per panel automatiskt — endast när det lönar sig. Resultat: mer producerad el under vintern.",
+                    "Atmoce melts snow per panel automatically — only when it pays off. Result: more electricity produced during winter.",
+                  )
+                : t(
+                    `Atmoce-mikroväxelriktarna kan aktivera varje panel individuellt som värmare (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/dag = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·dag). Här jämförs vinst vs. elkostnad per månad.`,
+                    `Atmoce microinverters can activate each panel individually as a heater (${state.meltPowerW} W × ${state.meltMinutesPerDay} min/day = ${fmtNum(meltKwhPerPanelDay, 3)} kWh/panel·day). Here we compare gains vs. electricity cost per month.`,
+                  )}
             </p>
           </div>
           {!compact && (
@@ -220,36 +225,78 @@ export function SnowMeltCard({
         )}
 
         {/* Summary */}
-        <div className="grid gap-3 rounded-lg border bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Summary
-            label={t("Återvunnen produktion / år", "Recovered production / year")}
-            value={`+${fmtNum(result.totalRecoveredKwh)} kWh`}
-          />
-          <Summary
-            label={t("Elåtgång smältning / år", "Electricity used for melting / year")}
-            value={`${fmtNum(result.totalMeltKwh, 1)} kWh`}
-          />
-          <Summary
-            label={t("Kostnad smältning / år", "Melting cost / year")}
-            value={fmtSek(result.totalMeltCost)}
-          />
-          <Summary
-            label={t("Nettovinst / år", "Net gain / year")}
-            value={fmtSek(result.totalNetBenefit)}
-            positive={result.totalNetBenefit >= 0}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {t(`Över kalkyltiden (${years} år):`, `Over the calculation period (${years} years):`)}{" "}
-          <span className="font-mono font-semibold text-foreground">
-            {fmtSek(result.totalNetBenefit * years)}
-          </span>{" "}
-          {t("extra värde och", "extra value and")}{" "}
-          <span className="font-mono font-semibold text-foreground">
-            +{fmtNum(result.totalRecoveredKwh * years)} kWh
-          </span>{" "}
-          {t("extra produktion från Atmoce-styrd snösmältning.", "extra production from Atmoce-controlled snow melting.")}
-        </p>
+        {compact ? (
+          <>
+            <div className="grid gap-3 rounded-lg border bg-muted/40 p-4 sm:grid-cols-2">
+              <Summary
+                label={t("Återvunnen produktion / år", "Recovered production / year")}
+                value={`+${fmtNum(result.totalRecoveredKwh)} kWh`}
+                positive
+              />
+              <Summary
+                label={t(`Extra värde över ${years} år`, `Extra value over ${years} years`)}
+                value={fmtSek(result.totalNetBenefit * years)}
+                positive={result.totalNetBenefit >= 0}
+              />
+            </div>
+            <ul className="space-y-1.5 text-sm text-muted-foreground">
+              <li>
+                ✓{" "}
+                {t(
+                  "Automatisk styrning — aktiveras bara när det är lönsamt.",
+                  "Automatic control — activates only when profitable.",
+                )}
+              </li>
+              <li>
+                ✓{" "}
+                {t(
+                  "Per-panel-värme — endast Atmoce mikroväxelriktare klarar detta.",
+                  "Per-panel heating — only Atmoce microinverters can do this.",
+                )}
+              </li>
+              <li>
+                ✓{" "}
+                {t(
+                  "Mer producerad el under vintermånaderna utan extra hårdvara.",
+                  "More electricity produced during winter months with no extra hardware.",
+                )}
+              </li>
+            </ul>
+          </>
+        ) : (
+          <>
+            <div className="grid gap-3 rounded-lg border bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Summary
+                label={t("Återvunnen produktion / år", "Recovered production / year")}
+                value={`+${fmtNum(result.totalRecoveredKwh)} kWh`}
+              />
+              <Summary
+                label={t("Elåtgång smältning / år", "Electricity used for melting / year")}
+                value={`${fmtNum(result.totalMeltKwh, 1)} kWh`}
+              />
+              <Summary
+                label={t("Kostnad smältning / år", "Melting cost / year")}
+                value={fmtSek(result.totalMeltCost)}
+              />
+              <Summary
+                label={t("Nettovinst / år", "Net gain / year")}
+                value={fmtSek(result.totalNetBenefit)}
+                positive={result.totalNetBenefit >= 0}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t(`Över kalkyltiden (${years} år):`, `Over the calculation period (${years} years):`)}{" "}
+              <span className="font-mono font-semibold text-foreground">
+                {fmtSek(result.totalNetBenefit * years)}
+              </span>{" "}
+              {t("extra värde och", "extra value and")}{" "}
+              <span className="font-mono font-semibold text-foreground">
+                +{fmtNum(result.totalRecoveredKwh * years)} kWh
+              </span>{" "}
+              {t("extra produktion från Atmoce-styrd snösmältning.", "extra production from Atmoce-controlled snow melting.")}
+            </p>
+          </>
+        )}
 
         {!compact && detailsOpen && (
           <>
