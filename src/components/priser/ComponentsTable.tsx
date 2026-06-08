@@ -79,14 +79,36 @@ export function ComponentsTable({ components }: Props) {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("components").delete().eq("id", id);
-      if (error) throw error;
+      if (error) {
+        // FK violation → find what still references this component
+        if ((error as { code?: string }).code === "23503") {
+          const [scl, bc, sc] = await Promise.all([
+            supabase.from("system_component_lines").select("system_id").eq("component_id", id),
+            supabase
+              .from("battery_configs")
+              .select("name, base_component_id, module_component_id, bms_component_id")
+              .or(`base_component_id.eq.${id},module_component_id.eq.${id},bms_component_id.eq.${id}`),
+            supabase.from("system_configs").select("name").eq("battery_module_id", id),
+          ]);
+          const refs: string[] = [];
+          const systems = Array.from(new Set((scl.data ?? []).map((r) => r.system_id)));
+          if (systems.length) refs.push(`system: ${systems.join(", ")}`);
+          if (bc.data?.length) refs.push(`batterikonfig: ${bc.data.map((b) => b.name).join(", ")}`);
+          if (sc.data?.length) refs.push(`system (batterimodul): ${sc.data.map((s) => s.name).join(", ")}`);
+          throw new Error(
+            refs.length
+              ? `Används av — ${refs.join(" · ")}`
+              : error.message,
+          );
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success(t("Komponent raderad", "Component deleted"));
       invalidate();
     },
-    onError: (e: Error) =>
-      toast.error(t("Kunde inte radera (används av ett system?)", "Could not delete (used by a system?)")),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const add = useMutation({
