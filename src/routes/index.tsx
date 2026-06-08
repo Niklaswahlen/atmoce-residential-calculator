@@ -38,7 +38,7 @@ import {
   INVERTER_REPLACEMENT_COST,
   type CalcParams,
 } from "@/lib/calc";
-import { useSystemPrices, mergeSystems } from "@/lib/usePrices";
+import { usePricingData, buildSystems, type BatteryModulesMap } from "@/lib/usePrices";
 import {
   SnowMeltCard,
   DEFAULT_SNOWMELT_STATE,
@@ -138,10 +138,35 @@ function Index() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const npvChartRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: livePrices } = useSystemPrices();
-  const systems = useMemo(() => mergeSystems(livePrices), [livePrices]);
+  const { data: pricing } = usePricingData();
+  const [batteryModules, setBatteryModules] = useState<BatteryModulesMap>({});
+
+  const systems = useMemo(
+    () =>
+      pricing
+        ? buildSystems({
+            components: pricing.components,
+            systems: pricing.systems,
+            lines: pricing.lines,
+            settings: pricing.settings,
+            panels: params.panels,
+            batteryModules,
+          })
+        : SYSTEMS,
+    [pricing, params.panels, batteryModules],
+  );
+
   const atmoce = systems.atmoce;
   const reference = systems[referenceId];
+
+  const atmoceModulesDefault = pricing?.systems.find((s) => s.id === "atmoce")?.default_battery_modules ?? 2;
+  const refModulesDefault =
+    pricing?.systems.find((s) => s.id === referenceId)?.default_battery_modules ?? 1;
+  const atmoceModules = batteryModules["atmoce"] ?? atmoceModulesDefault;
+  const refModules = batteryModules[referenceId] ?? refModulesDefault;
+
+  const setBatteryModulesFor = (systemId: string, count: number) =>
+    setBatteryModules((prev) => ({ ...prev, [systemId]: Math.max(0, count) }));
 
   const set = <K extends keyof CalcParams>(k: K) => (v: number) =>
     setParams((p) => ({ ...p, [k]: v }));
@@ -416,7 +441,7 @@ function Index() {
                   {t("Referenssystem", "Reference system")}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <Select
                   value={referenceId}
                   onValueChange={(v) => setReferenceId(v as SystemId)}
@@ -432,6 +457,24 @@ function Index() {
                     ))}
                   </SelectContent>
                 </Select>
+                {!isSimple && pricing && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <NumField
+                      label={t("Atmoce batterimoduler", "Atmoce battery modules")}
+                      value={atmoceModules}
+                      onChange={(v) => setBatteryModulesFor("atmoce", Math.round(v))}
+                      step={1}
+                      suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
+                    />
+                    <NumField
+                      label={t("Ref. batterimoduler", "Ref. battery modules")}
+                      value={refModules}
+                      onChange={(v) => setBatteryModulesFor(referenceId, Math.round(v))}
+                      step={1}
+                      suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </aside>
