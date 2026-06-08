@@ -191,7 +191,6 @@ export async function generateSummaryPdf(input: PdfInput) {
     years,
     panels,
     wpPerPanel,
-    chartElement,
   } = input;
 
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
@@ -414,38 +413,32 @@ export async function generateSummaryPdf(input: PdfInput) {
   doc.text(snowText, pageW - margin - 2 - doc.getTextWidth(snowText), cursorY + 5.8);
   cursorY += stripH + 3;
 
-  // NPV chart screenshot
-  if (chartElement) {
-    try {
-      const canvas = await html2canvas(chartElement, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        logging: false,
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const availW = pageW - 2 * margin;
-      const ratio = canvas.height / canvas.width;
-      // Reservera plats för USP-kortet (ca 42 mm) + footer
-      const maxChartH = pageH - cursorY - 42 - 8 - 6;
-      const imgH = Math.min(availW * ratio, Math.max(40, maxChartH));
-      const imgW = imgH / ratio;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(...PLUM);
-      doc.text(`Ackumulerat nuvärde över ${years} år`, margin, cursorY);
-      cursorY += 2;
-      doc.addImage(
-        imgData,
-        "PNG",
-        margin + (availW - imgW) / 2,
-        cursorY,
-        imgW,
-        imgH,
-      );
-      cursorY += imgH + 3;
-    } catch (err) {
-      console.warn("Chart capture failed", err);
-    }
+  // NPV chart — native jsPDF (works in både simple och advanced mode)
+  {
+    const availW = pageW - 2 * margin;
+    // Reservera plats: USP-kort (~42 mm) + footer (~8 mm)
+    const chartH = Math.max(50, pageH - cursorY - 42 - 8);
+    const atmoceSeries = [
+      -atmoceResult.investment,
+      ...atmoceResult.rows.map((r) => r.cumulativeNpv),
+    ];
+    const refSeries = [
+      -refResult.investment,
+      ...refResult.rows.map((r) => r.cumulativeNpv),
+    ];
+    drawNpvChart(doc, {
+      x: margin,
+      y: cursorY,
+      w: availW,
+      h: chartH,
+      years,
+      atmoceSeries,
+      refSeries,
+      atmoceLabel: atmoce.name,
+      refLabel: reference.name,
+      title: `Ackumulerat nuvärde över ${years} år (kr)`,
+    });
+    cursorY += chartH + 3;
   }
 
   // USP-kort längst ner
