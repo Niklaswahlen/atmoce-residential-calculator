@@ -31,6 +31,7 @@ import { useT } from "@/lib/app-context";
 import { fmtSek, fmtNum } from "@/lib/calc";
 import {
   computeSystemPrice,
+  type BatteryConfig,
   type Component,
   type PriceSettings,
   type QtyKind,
@@ -46,6 +47,7 @@ interface Props {
   components: Component[];
   settings: PriceSettings;
   panels: number;
+  batteryConfigs: BatteryConfig[];
 }
 
 const QTY_KINDS: { kind: QtyKind; sv: string; en: string }[] = [
@@ -55,13 +57,13 @@ const QTY_KINDS: { kind: QtyKind; sv: string; en: string }[] = [
   { kind: "per_battery_module", sv: "Per batterimodul", en: "Per battery module" },
 ];
 
-export function SystemConfigCard({ config, lines, components, settings, panels }: Props) {
+export function SystemConfigCard({ config, lines, components, settings, panels, batteryConfigs }: Props) {
   const t = useT();
   const qc = useQueryClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: PRICING_KEY });
 
   const [batteryModules, setBatteryModules] = useState(config.default_battery_modules);
-  const [batteryModuleId, setBatteryModuleId] = useState<string | null>(config.battery_module_id);
+  const [batteryConfigId, setBatteryConfigId] = useState<string | null>(config.battery_config_id);
   const [pvOverride, setPvOverride] = useState<string>(
     config.pv_override_inc_vat === null ? "" : String(config.pv_override_inc_vat),
   );
@@ -71,7 +73,7 @@ export function SystemConfigCard({ config, lines, components, settings, panels }
 
   useEffect(() => {
     setBatteryModules(config.default_battery_modules);
-    setBatteryModuleId(config.battery_module_id);
+    setBatteryConfigId(config.battery_config_id);
     setPvOverride(config.pv_override_inc_vat === null ? "" : String(config.pv_override_inc_vat));
     setEssOverride(config.ess_override_inc_vat === null ? "" : String(config.ess_override_inc_vat));
   }, [config]);
@@ -79,7 +81,7 @@ export function SystemConfigCard({ config, lines, components, settings, panels }
   const result = computeSystemPrice({
     config: {
       ...config,
-      battery_module_id: batteryModuleId,
+      battery_config_id: batteryConfigId,
       pv_override_inc_vat: pvOverride === "" ? null : parseFloat(pvOverride),
       ess_override_inc_vat: essOverride === "" ? null : parseFloat(essOverride),
     },
@@ -88,6 +90,7 @@ export function SystemConfigCard({ config, lines, components, settings, panels }
     settings,
     panels,
     batteryModules,
+    batteryConfigs,
   });
 
   const saveConfig = useMutation({
@@ -95,7 +98,7 @@ export function SystemConfigCard({ config, lines, components, settings, panels }
       const { error } = await supabase
         .from("system_configs")
         .update({
-          battery_module_id: batteryModuleId,
+          battery_config_id: batteryConfigId,
           default_battery_modules: batteryModules,
           pv_override_inc_vat: pvOverride === "" ? null : parseFloat(pvOverride),
           ess_override_inc_vat: essOverride === "" ? null : parseFloat(essOverride),
@@ -112,11 +115,14 @@ export function SystemConfigCard({ config, lines, components, settings, panels }
 
   const dirty =
     batteryModules !== config.default_battery_modules ||
-    batteryModuleId !== config.battery_module_id ||
+    batteryConfigId !== config.battery_config_id ||
     (pvOverride === "" ? config.pv_override_inc_vat !== null : parseFloat(pvOverride) !== config.pv_override_inc_vat) ||
     (essOverride === "" ? config.ess_override_inc_vat !== null : parseFloat(essOverride) !== config.ess_override_inc_vat);
 
-  const batteryModuleComponents = components.filter((c) => c.category === "battery_module");
+  const selectedBatteryConfig = batteryConfigs.find((b) => b.id === batteryConfigId);
+  const moduleComponent = selectedBatteryConfig
+    ? components.find((c) => c.id === selectedBatteryConfig.module_component_id)
+    : undefined;
 
   return (
     <Card>
@@ -136,18 +142,27 @@ export function SystemConfigCard({ config, lines, components, settings, panels }
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label className="text-xs uppercase text-muted-foreground">
-              {t("Batterimodul", "Battery module")}
+              {t("Batterikonfiguration", "Battery configuration")}
             </Label>
-            <Select value={batteryModuleId ?? ""} onValueChange={setBatteryModuleId}>
+            <Select value={batteryConfigId ?? ""} onValueChange={(v) => setBatteryConfigId(v || null)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {batteryModuleComponents.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name} ({c.unit_kwh} kWh)
-                  </SelectItem>
-                ))}
+                {batteryConfigs.map((b) => {
+                  const m = components.find((c) => c.id === b.module_component_id);
+                  return (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name} ({m?.unit_kwh ?? "?"} kWh/modul)
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
+            {selectedBatteryConfig && (
+              <p className="text-[10px] text-muted-foreground">
+                {t("Moduler:", "Modules:")} {selectedBatteryConfig.min_modules}–{selectedBatteryConfig.max_modules}
+                {moduleComponent ? ` · ${moduleComponent.unit_kwh} kWh/modul` : ""}
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs uppercase text-muted-foreground">
