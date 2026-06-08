@@ -1,50 +1,61 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { SYSTEMS, SYSTEM_ORDER, type SystemId, type SystemSpec } from "@/data/systems";
+import { SYSTEMS, type SystemId, type SystemSpec } from "@/data/systems";
+import {
+  computeSystemPrice,
+  type Component,
+  type PriceSettings,
+  type SystemConfig,
+  type SystemLine,
+} from "./pricing";
 
-export interface SystemPriceRow {
-  id: string;
-  name: string;
-  pv_price: number;
-  ess_price: number;
-  updated_at: string;
-}
+export { usePricingData, PRICING_KEY } from "./usePricing";
 
-export const PRICES_KEY = ["system_prices"] as const;
-
-export function useSystemPrices() {
-  return useQuery({
-    queryKey: PRICES_KEY,
-    queryFn: async (): Promise<SystemPriceRow[]> => {
-      const { data, error } = await supabase
-        .from("system_prices")
-        .select("*")
-        .order("id");
-      if (error) throw error;
-      return (data ?? []) as SystemPriceRow[];
-    },
-    staleTime: 30_000,
-  });
+export interface BatteryModulesMap {
+  [systemId: string]: number | undefined;
 }
 
 /**
- * Merge live Cloud-priser into the hardcoded SYSTEMS spec (warranties, batteri etc.
- * stays as defaults). Faller tillbaka till hårdkodade priser om Cloud-data saknas.
+ * Build the live SystemSpec map by combining hardcoded technical specs
+ * (warranties, round-trip efficiency, inverter type, …) with prices and
+ * battery capacity computed from the components-based pricing model.
  */
-export function mergeSystems(prices: SystemPriceRow[] | undefined): Record<SystemId, SystemSpec> {
-  const out = { ...SYSTEMS };
-  if (!prices) return out;
-  for (const row of prices) {
-    const id = row.id as SystemId;
+export function buildSystems(args: {
+  components: Component[];
+  systems: SystemConfig[];
+  lines: SystemLine[];
+  settings: PriceSettings;
+  panels: number;
+  batteryModules?: BatteryModulesMap;
+}): Record<SystemId, SystemSpec> {
+  const { components, systems, lines, settings, panels, batteryModules = {} } = args;
+  const out: Record<SystemId, SystemSpec> = { ...SYSTEMS };
+
+  for (const config of systems) {
+    const id = config.id as SystemId;
     if (!out[id]) continue;
-    out[id] = { ...out[id], pvPrice: row.pv_price, essPrice: row.ess_price };
+    const modules = batteryModules[id] ?? config.default_battery_modules;
+    const result = computeSystemPrice({
+      config,
+      lines: lines.filter((l) => l.system_id === config.id),
+      components,
+      settings,
+      panels,
+      batteryModules: modules,
+    });
+    out[id] = {
+      ...out[id],
+      name: config.name,
+      short: config.short,
+      pvPrice: result.pv.price,
+      essPrice: result.ess.price,
+      batteryKwh: result.batteryKwh || out[id].batteryKwh,
+    };
   }
   return out;
 }
 
-export const DEFAULT_PRICES: { id: SystemId; pv_price: number; ess_price: number }[] =
-  SYSTEM_ORDER.map((id) => ({
-    id,
-    pv_price: SYSTEMS[id].pvPrice,
-    ess_price: SYSTEMS[id].essPrice,
-  }));
+/** Default battery-modules-per-system map from the loaded configs. */
+export function defaultBatteryModules(systems: SystemConfig[] | undefined): BatteryModulesMap {
+  const out: BatteryModulesMap = {};
+  for (const s of systems ?? []) out[s.id] = s.default_battery_modules;
+  return out;
+}
