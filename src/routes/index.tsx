@@ -861,6 +861,7 @@ function SystemCard({
   lcoe,
   npv,
   kWp: _kWp,
+  t,
 }: {
   title: string;
   isAtmoce?: boolean;
@@ -872,6 +873,7 @@ function SystemCard({
   lcoe: number;
   npv: number;
   kWp: number;
+  t: (sv: string, en: string) => string;
 }) {
   return (
     <Card
@@ -886,22 +888,22 @@ function SystemCard({
           <CardTitle className="text-base">{title}</CardTitle>
           {isAtmoce && (
             <span className="rounded-full bg-atmoce px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-foreground">
-              Rekommenderad
+              {t("Rekommenderad", "Recommended")}
             </span>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Metric label="Investering" value={fmtSek(investment)} />
+        <Metric label={t("Investering", "Investment")} value={fmtSek(investment)} />
         <Metric label="LCOE" value={`${fmtNum(lcoe, 2)} kr/kWh`} big />
         <div className="grid grid-cols-2 gap-3 pt-1">
           <Metric
-            label="Payback"
-            value={payback === null ? "> kalkyltid" : `${fmtNum(payback, 1)} år`}
+            label={t("Payback", "Payback")}
+            value={payback === null ? t("> kalkyltid", "> period") : `${fmtNum(payback, 1)} ${t("år", "yrs")}`}
           />
           <Metric label="IRR" value={irr === null ? "—" : fmtPct(irr)} />
-          <Metric label="Total produktion" value={`${fmtNum(production)} kWh`} />
-          <Metric label="Total besparing" value={fmtSek(savings)} />
+          <Metric label={t("Total produktion", "Total production")} value={`${fmtNum(production)} kWh`} />
+          <Metric label={t("Total besparing", "Total savings")} value={fmtSek(savings)} />
           <Metric label="NPV" value={fmtSek(npv)} />
         </div>
       </CardContent>
