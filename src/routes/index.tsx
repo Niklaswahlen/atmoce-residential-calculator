@@ -451,6 +451,7 @@ function Index() {
                 lcoe={atmoceResult.lcoe}
                 npv={atmoceResult.npv}
                 kWp={atmoceResult.kWp}
+                t={t}
               />
               <SystemCard
                 title={reference.name}
@@ -462,6 +463,7 @@ function Index() {
                 lcoe={refResult.lcoe}
                 npv={refResult.npv}
                 kWp={refResult.kWp}
+                t={t}
               />
             </div>
 
@@ -469,21 +471,21 @@ function Index() {
             <Card className="border-l-4 border-l-atmoce">
               <CardContent className="grid gap-4 p-5 sm:grid-cols-3">
                 <DeltaItem
-                  label="Mer producerad el över kalkyltiden"
+                  label={t("Mer producerad el över kalkyltiden", "More electricity produced over the period")}
                   value={`${extraKwh >= 0 ? "+" : ""}${fmtNum(extraKwh)} kWh`}
                   positive={extraKwh >= 0}
                 />
                 <DeltaItem
-                  label="Mer besparing över kalkyltiden"
+                  label={t("Mer besparing över kalkyltiden", "More savings over the period")}
                   value={`${extraSavings >= 0 ? "+" : ""}${fmtSek(extraSavings)}`}
                   positive={extraSavings >= 0}
                 />
                 <DeltaItem
-                  label="Snabbare payback"
+                  label={t("Snabbare payback", "Faster payback")}
                   value={
                     paybackDelta === null
                       ? "—"
-                      : `${paybackDelta >= 0 ? "+" : ""}${fmtNum(paybackDelta, 1)} år`
+                      : `${paybackDelta >= 0 ? "+" : ""}${fmtNum(paybackDelta, 1)} ${t("år", "yrs")}`
                   }
                   positive={(paybackDelta ?? 0) >= 0}
                 />
