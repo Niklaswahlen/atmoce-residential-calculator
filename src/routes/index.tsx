@@ -285,7 +285,7 @@ function Index() {
         years: params.years,
         panels: params.panels,
         wpPerPanel: params.wpPerPanel,
-        chartElement: npvChartRef.current,
+          chartElement: npvChartRef.current ?? null,
       });
       toast.success(t("PDF genererad", "PDF generated"));
     } catch (e) {
