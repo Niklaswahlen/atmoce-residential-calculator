@@ -933,6 +933,7 @@ function SystemCard({
   lcoe: number;
   npv: number;
   kWp: number;
+  batteryKwh?: number;
   t: (sv: string, en: string) => string;
 }) {
   return (
