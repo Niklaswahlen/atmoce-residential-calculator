@@ -152,12 +152,12 @@ function Index() {
             panels: params.panels,
             batteryModules,
           })
-        : null,
+        : SYSTEMS,
     [pricing, params.panels, batteryModules],
   );
 
-  const atmoce = systems?.atmoce;
-  const reference = systems?.[referenceId];
+  const atmoce = systems.atmoce;
+  const reference = systems[referenceId];
 
   const atmoceModulesDefault = pricing?.systems.find((s) => s.id === "atmoce")?.default_battery_modules ?? 2;
   const refModulesDefault =
