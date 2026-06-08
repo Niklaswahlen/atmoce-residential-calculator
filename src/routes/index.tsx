@@ -465,22 +465,27 @@ function Index() {
                     ))}
                   </SelectContent>
                 </Select>
-                {!isSimple && pricing && (
-                  <div className="grid grid-cols-2 gap-2 pt-1">
+                {pricing && (
+                  <div className="space-y-2 pt-1">
                     <NumField
-                      label={t("Atmoce batterimoduler", "Atmoce battery modules")}
+                      label={t(
+                        `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
+                        `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
+                      )}
                       value={atmoceModules}
-                      onChange={(v) => setBatteryModulesFor("atmoce", Math.round(v))}
+                      onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
                       step={1}
                       suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                     />
-                    <NumField
-                      label={t("Ref. batterimoduler", "Ref. battery modules")}
-                      value={refModules}
-                      onChange={(v) => setBatteryModulesFor(referenceId, Math.round(v))}
-                      step={1}
-                      suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
-                    />
+                    <div className="rounded-md bg-muted px-3 py-2 text-xs">
+                      <div className="text-muted-foreground">
+                        {t("Referenssystem matchas automatiskt", "Reference system matched automatically")}
+                      </div>
+                      <div className="font-mono">
+                        {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
+                        <span className="font-semibold">{fmtNum(reference.batteryKwh, 2)} kWh</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
