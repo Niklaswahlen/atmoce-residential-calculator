@@ -315,7 +315,11 @@ function SideTable({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const sideComponents = components.filter((c) => c.side === side);
+  const sideComponents = components.filter(
+    (c) =>
+      c.side === side ||
+      (side === "ess" && (c.category === "accessory" || c.category === "cabling")),
+  );
 
   return (
     <div className="space-y-2">
