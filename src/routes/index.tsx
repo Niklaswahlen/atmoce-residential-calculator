@@ -139,7 +139,24 @@ function Index() {
   const npvChartRef = useRef<HTMLDivElement | null>(null);
 
   const { data: pricing } = usePricingData();
-  const [batteryModules, setBatteryModules] = useState<BatteryModulesMap>({});
+  const [atmoceModulesState, setAtmoceModulesState] = useState<number | null>(null);
+
+  const atmoceConfig = pricing?.systems.find((s) => s.id === "atmoce");
+  const refConfig = pricing?.systems.find((s) => s.id === referenceId);
+  const atmoceUnitKwh =
+    pricing?.components.find((c) => c.id === atmoceConfig?.battery_module_id)?.unit_kwh ?? 7;
+  const refUnitKwh =
+    pricing?.components.find((c) => c.id === refConfig?.battery_module_id)?.unit_kwh ?? 5.12;
+
+  const atmoceModulesDefault = atmoceConfig?.default_battery_modules ?? 2;
+  const atmoceModules = atmoceModulesState ?? atmoceModulesDefault;
+  const targetKwh = atmoceModules * atmoceUnitKwh;
+  const refModules = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
+
+  const batteryModules: BatteryModulesMap = useMemo(
+    () => ({ atmoce: atmoceModules, [referenceId]: refModules }),
+    [atmoceModules, refModules, referenceId],
+  );
 
   const systems = useMemo(
     () =>
@@ -158,15 +175,6 @@ function Index() {
 
   const atmoce = systems.atmoce;
   const reference = systems[referenceId];
-
-  const atmoceModulesDefault = pricing?.systems.find((s) => s.id === "atmoce")?.default_battery_modules ?? 2;
-  const refModulesDefault =
-    pricing?.systems.find((s) => s.id === referenceId)?.default_battery_modules ?? 1;
-  const atmoceModules = batteryModules["atmoce"] ?? atmoceModulesDefault;
-  const refModules = batteryModules[referenceId] ?? refModulesDefault;
-
-  const setBatteryModulesFor = (systemId: string, count: number) =>
-    setBatteryModules((prev) => ({ ...prev, [systemId]: Math.max(0, count) }));
 
   const set = <K extends keyof CalcParams>(k: K) => (v: number) =>
     setParams((p) => ({ ...p, [k]: v }));
