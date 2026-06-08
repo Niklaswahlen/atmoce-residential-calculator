@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +21,8 @@ import {
   type SystemPriceRow,
 } from "@/lib/usePrices";
 import { fmtSek } from "@/lib/calc";
+import { AppHeader } from "@/components/AppHeader";
+import { useT } from "@/lib/app-context";
 
 export const Route = createFileRoute("/priser")({
   head: () => ({
@@ -39,6 +41,7 @@ export const Route = createFileRoute("/priser")({
 function PricesPage() {
   const { data, isLoading, error } = useSystemPrices();
   const qc = useQueryClient();
+  const t = useT();
 
   const update = useMutation({
     mutationFn: async (row: { id: string; pv_price: number; ess_price: number }) => {
@@ -74,41 +77,36 @@ function PricesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-primary text-primary-foreground">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Systempriser</h1>
-            <p className="mt-1 text-sm text-primary-foreground/70">
-              Delad prislista — ändringar syns för alla användare direkt.
-            </p>
-          </div>
-          <Link
-            to="/"
-            className="rounded-md bg-primary-foreground/10 px-3 py-2 text-sm font-medium hover:bg-primary-foreground/20"
-          >
-            ← Till kalkylator
-          </Link>
-        </div>
-      </header>
+      <AppHeader
+        subtitle={t("Systempriser", "System prices")}
+        showModeToggle={false}
+      />
 
       <main className="mx-auto max-w-5xl px-6 py-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Prislista (inkl. 15 % grönt teknikavdrag)</CardTitle>
+            <CardTitle>
+              {t(
+                "Prislista (inkl. 15 % grönt teknikavdrag)",
+                "Price list (incl. 15% green tech deduction)",
+              )}
+            </CardTitle>
             <Button
               variant="outline"
               size="sm"
               onClick={() => reset.mutate()}
               disabled={reset.isPending}
             >
-              Återställ till 2026-priser
+              {t("Återställ till 2026-priser", "Reset to 2026 prices")}
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading && <p className="text-sm text-muted-foreground">Laddar…</p>}
+            {isLoading && (
+              <p className="text-sm text-muted-foreground">{t("Laddar…", "Loading…")}</p>
+            )}
             {error && (
               <p className="text-sm text-destructive">
-                Kunde inte hämta priser: {(error as Error).message}
+                {t("Kunde inte hämta priser:", "Could not load prices:")} {(error as Error).message}
               </p>
             )}
             {data && (
