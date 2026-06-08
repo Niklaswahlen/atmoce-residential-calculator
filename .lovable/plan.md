@@ -1,15 +1,51 @@
-## Varför det inte går
+## Problem
 
-"CT-klämmor" (`atmoce_ct_clamps`) ligger fortfarande som en rad på ESS-sidan i systemet **Atmoce** — `system_component_lines` har en rad med `qty_value = 0`, så den syns inte i kalkylen men finns kvar i databasen. Foreign key blockerar radering av komponenten och felmeddelandet "Kunde inte radera (används av ett system?)" visas.
+NPV-grafen saknas i PDF:n eftersom:
+1. Grafen i UI:t renderas bara i avancerat läge (`{!isSimple && ...}`). I enkelt läge är `npvChartRef.current` `null` → ingen bild i PDF:n.
+2. Även i avancerat läge kan html2canvas ha problem med Recharts (SVG, CSS-variabler, oklch-färger).
 
-Idag visas felet alltid generiskt oavsett orsak, vilket gör det svårt att förstå.
+## Lösning
 
-## Förslag
+Skippa html2canvas. Rita linjediagrammet direkt i jsPDF utifrån de befintliga NPV-raderna. Då fungerar det i alla lägen och behöver ingen DOM-graf.
 
-1. **Ta bort den dolda raden** för `atmoce_ct_clamps` på systemet `atmoce` (qty_value=0, sort_order=6) så komponenten kan raderas.
-2. **Förbättra felhanteringen i `ComponentsTable.tsx`**:
-   - Visa Supabase-felets faktiska meddelande istället för fast text.
-   - Vid FK-fel (kod `23503`): lista vilka system som fortfarande använder komponenten, så användaren vet var raden ligger kvar.
-3. **(Valfritt)** Lägg till en "Visa användning"-knapp på varje komponent som listar system + batterikonfigurationer den ingår i.
+## Ändringar
 
-Vill du att jag (a) bara rensar bort den dolda raden så CT-klämmor kan raderas, (b) gör det + förbättrar felmeddelandet, eller (c) gör alla tre stegen?
+**`src/lib/pdf.ts`**
+- Ta bort html2canvas-anropet och `chartElement`-användningen i NPV-sektionen.
+- Lägg till en ny hjälpare `drawNpvChart(doc, { x, y, w, h, atmoceSeries, refSeries, atmoceLabel, refLabel, years })` som ritar:
+  - Ramad ruta med titel "Ackumulerat nuvärde över N år".
+  - Y-axel med 4–5 ticks (auto-skalade till min/max över båda serierna, inkl. år 0 = −investering), formaterade som "120k" / "−50k".
+  - X-axel med ticks var 5:e år (0, 5, 10, …, N).
+  - Horisontell nollinje (streckad, grå).
+  - Två polylines i Atmoce-coral och referensgrå/plommon, med tunna prickar vid varje datapunkt.
+  - Liten legend uppe till höger med färgrutor + systemnamn.
+- Bygg dataserierna i `generateSummaryPdf` från `atmoceResult` och `refResult` (samma data som `npvChartData` i `index.tsx`: börja år 0 med −investering, sedan `cumulativeNpv` per år).
+- Behåll övrig layout (jämförelsetabell, resultatremsa, USP-kort) på samma A4-sida.
+
+**`src/routes/index.tsx`**
+- Sluta skicka `chartElement` till `generateSummaryPdf` (parametern kan tas bort från `PdfInput`).
+- `npvChartRef` kan tas bort.
+
+## Teknisk skiss
+
+```text
++----------------------------------------------------------+
+| Ackumulerat nuvärde över 25 år           ■ Atmoce ■ Ref |
+|                                                          |
+|  150k |                              .─────              |
+|       |                       ─────'                     |
+|   0k  |───────────────────.───────────────────           |
+|       |              ___.'                               |
+| -100k |       ___.─'                                     |
+|       └──┬────┬────┬────┬────┬────┬                      |
+|          0    5   10   15   20   25                      |
++----------------------------------------------------------+
+```
+
+Implementeras med `doc.line`, `doc.setDrawColor`, `doc.setLineWidth` och `doc.text`. Inga nya bibliotek.
+
+## Acceptanskriterier
+
+- PDF:n innehåller NPV-grafen både i enkelt och avancerat läge.
+- Grafen visar båda systemen, en nollinje, och år 0…N på x-axeln.
+- Allt ryms fortfarande på en A4 utan överlapp.
