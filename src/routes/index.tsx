@@ -139,7 +139,24 @@ function Index() {
   const npvChartRef = useRef<HTMLDivElement | null>(null);
 
   const { data: pricing } = usePricingData();
-  const [batteryModules, setBatteryModules] = useState<BatteryModulesMap>({});
+  const [atmoceModulesState, setAtmoceModulesState] = useState<number | null>(null);
+
+  const atmoceConfig = pricing?.systems.find((s) => s.id === "atmoce");
+  const refConfig = pricing?.systems.find((s) => s.id === referenceId);
+  const atmoceUnitKwh =
+    pricing?.components.find((c) => c.id === atmoceConfig?.battery_module_id)?.unit_kwh ?? 7;
+  const refUnitKwh =
+    pricing?.components.find((c) => c.id === refConfig?.battery_module_id)?.unit_kwh ?? 5.12;
+
+  const atmoceModulesDefault = atmoceConfig?.default_battery_modules ?? 2;
+  const atmoceModules = atmoceModulesState ?? atmoceModulesDefault;
+  const targetKwh = atmoceModules * atmoceUnitKwh;
+  const refModules = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
+
+  const batteryModules: BatteryModulesMap = useMemo(
+    () => ({ atmoce: atmoceModules, [referenceId]: refModules }),
+    [atmoceModules, refModules, referenceId],
+  );
 
   const systems = useMemo(
     () =>
@@ -158,15 +175,6 @@ function Index() {
 
   const atmoce = systems.atmoce;
   const reference = systems[referenceId];
-
-  const atmoceModulesDefault = pricing?.systems.find((s) => s.id === "atmoce")?.default_battery_modules ?? 2;
-  const refModulesDefault =
-    pricing?.systems.find((s) => s.id === referenceId)?.default_battery_modules ?? 1;
-  const atmoceModules = batteryModules["atmoce"] ?? atmoceModulesDefault;
-  const refModules = batteryModules[referenceId] ?? refModulesDefault;
-
-  const setBatteryModulesFor = (systemId: string, count: number) =>
-    setBatteryModules((prev) => ({ ...prev, [systemId]: Math.max(0, count) }));
 
   const set = <K extends keyof CalcParams>(k: K) => (v: number) =>
     setParams((p) => ({ ...p, [k]: v }));
@@ -457,22 +465,27 @@ function Index() {
                     ))}
                   </SelectContent>
                 </Select>
-                {!isSimple && pricing && (
-                  <div className="grid grid-cols-2 gap-2 pt-1">
+                {pricing && (
+                  <div className="space-y-2 pt-1">
                     <NumField
-                      label={t("Atmoce batterimoduler", "Atmoce battery modules")}
+                      label={t(
+                        `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
+                        `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
+                      )}
                       value={atmoceModules}
-                      onChange={(v) => setBatteryModulesFor("atmoce", Math.round(v))}
+                      onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
                       step={1}
                       suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                     />
-                    <NumField
-                      label={t("Ref. batterimoduler", "Ref. battery modules")}
-                      value={refModules}
-                      onChange={(v) => setBatteryModulesFor(referenceId, Math.round(v))}
-                      step={1}
-                      suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
-                    />
+                    <div className="rounded-md bg-muted px-3 py-2 text-xs">
+                      <div className="text-muted-foreground">
+                        {t("Referenssystem matchas automatiskt", "Reference system matched automatically")}
+                      </div>
+                      <div className="font-mono">
+                        {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
+                        <span className="font-semibold">{fmtNum(reference.batteryKwh, 2)} kWh</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -494,6 +507,7 @@ function Index() {
                 lcoe={atmoceResult.lcoe}
                 npv={atmoceResult.npv}
                 kWp={atmoceResult.kWp}
+                batteryKwh={atmoce.batteryKwh}
                 t={t}
               />
               <SystemCard
@@ -506,6 +520,7 @@ function Index() {
                 lcoe={refResult.lcoe}
                 npv={refResult.npv}
                 kWp={refResult.kWp}
+                batteryKwh={reference.batteryKwh}
                 t={t}
               />
             </div>
@@ -906,6 +921,7 @@ function SystemCard({
   lcoe,
   npv,
   kWp: _kWp,
+  batteryKwh,
   t,
 }: {
   title: string;
@@ -918,6 +934,7 @@ function SystemCard({
   lcoe: number;
   npv: number;
   kWp: number;
+  batteryKwh?: number;
   t: (sv: string, en: string) => string;
 }) {
   return (
@@ -950,6 +967,12 @@ function SystemCard({
           <Metric label={t("Total produktion", "Total production")} value={`${fmtNum(production)} kWh`} />
           <Metric label={t("Total besparing", "Total savings")} value={fmtSek(savings)} />
           <Metric label="NPV" value={fmtSek(npv)} />
+          {typeof batteryKwh === "number" && (
+            <Metric
+              label={t("Batteri", "Battery")}
+              value={`${fmtNum(batteryKwh, 2)} kWh`}
+            />
+          )}
         </div>
       </CardContent>
     </Card>
