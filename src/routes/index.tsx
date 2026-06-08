@@ -141,21 +141,23 @@ function Index() {
   const { data: pricing } = usePricingData();
   const [batteryModules, setBatteryModules] = useState<BatteryModulesMap>({});
 
-  const systems = useMemo(() => {
-    if (!pricing) return { ...({} as never) } as never;
-    return buildSystems({
-      components: pricing.components,
-      systems: pricing.systems,
-      lines: pricing.lines,
-      settings: pricing.settings,
-      panels: params.panels,
-      batteryModules,
-    });
-  }, [pricing, params.panels, batteryModules]);
+  const systems = useMemo(
+    () =>
+      pricing
+        ? buildSystems({
+            components: pricing.components,
+            systems: pricing.systems,
+            lines: pricing.lines,
+            settings: pricing.settings,
+            panels: params.panels,
+            batteryModules,
+          })
+        : null,
+    [pricing, params.panels, batteryModules],
+  );
 
-  const atmoce = (systems as Record<SystemId, ReturnType<typeof buildSystems>[SystemId]>).atmoce ?? null;
-  const reference =
-    (systems as Record<SystemId, ReturnType<typeof buildSystems>[SystemId]>)[referenceId] ?? null;
+  const atmoce = systems?.atmoce;
+  const reference = systems?.[referenceId];
 
   const atmoceModulesDefault = pricing?.systems.find((s) => s.id === "atmoce")?.default_battery_modules ?? 2;
   const refModulesDefault =
