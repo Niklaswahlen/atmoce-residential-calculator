@@ -521,31 +521,30 @@ function Index() {
             {!isSimple && (
             <Card>
               <CardHeader>
-                <CardTitle>Växelriktarbyten</CardTitle>
+                <CardTitle>{t("Växelriktarbyten", "Inverter replacements")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Atmoce har {atmoce.inverterWarrantyYears} års produktgaranti på
-                  sina mikroväxelriktare. Traditionella system har ofta kortare
-                  garanti, vilket innebär en eller flera bytena under kalkyltiden.
-                  Varje byte räknas som {fmtSek(INVERTER_REPLACEMENT_COST)} ink.
-                  moms.
+                  {t(
+                    `Atmoce har ${atmoce.inverterWarrantyYears} års produktgaranti på sina mikroväxelriktare. Traditionella system har ofta kortare garanti, vilket innebär ett eller flera byten under kalkyltiden. Varje byte räknas som ${fmtSek(INVERTER_REPLACEMENT_COST)} ink. moms.`,
+                    `Atmoce has ${atmoce.inverterWarrantyYears} years product warranty on its microinverters. Traditional systems often have a shorter warranty, meaning one or more replacements during the calculation period. Each replacement counts as ${fmtSek(INVERTER_REPLACEMENT_COST)} incl. VAT.`,
+                  )}
                 </p>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>System</TableHead>
-                      <TableHead className="text-right">Garanti</TableHead>
-                      <TableHead className="text-center">Antal byten</TableHead>
-                      <TableHead className="text-right">Bytesår</TableHead>
-                      <TableHead className="text-right">Total kostnad</TableHead>
+                      <TableHead className="text-right">{t("Garanti", "Warranty")}</TableHead>
+                      <TableHead className="text-center">{t("Antal byten", "# replacements")}</TableHead>
+                      <TableHead className="text-right">{t("Bytesår", "Replacement years")}</TableHead>
+                      <TableHead className="text-right">{t("Total kostnad", "Total cost")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
                       <TableCell className="font-medium">{atmoce.name}</TableCell>
                       <TableCell className="text-right font-mono tabular-nums">
-                        {atmoce.inverterWarrantyYears} år
+                        {atmoce.inverterWarrantyYears} {t("år", "yrs")}
                       </TableCell>
                       <TableCell className="text-center font-mono">0</TableCell>
                       <TableCell className="text-right text-muted-foreground">
@@ -558,7 +557,7 @@ function Index() {
                     <TableRow>
                       <TableCell className="font-medium">{reference.name}</TableCell>
                       <TableCell className="text-right font-mono tabular-nums">
-                        {reference.inverterWarrantyYears} år
+                        {reference.inverterWarrantyYears} {t("år", "yrs")}
                       </TableCell>
                       <TableCell className="text-center">
                         <Select
@@ -578,7 +577,7 @@ function Index() {
                       <TableCell className="text-right font-mono tabular-nums">
                         {refReplacementYears.length === 0
                           ? "—"
-                          : refReplacementYears.map((y) => `År ${y}`).join(", ")}
+                          : refReplacementYears.map((y) => `${t("År", "Year")} ${y}`).join(", ")}
                       </TableCell>
                       <TableCell className="text-right font-mono tabular-nums">
                         {fmtSek(refResult.totalReplacementCost)}
@@ -596,7 +595,7 @@ function Index() {
               <CardHeader>
                 <div className="flex items-center justify-between gap-3">
                   <CardTitle>
-                    Ackumulerat nuvärde över {params.years} år
+                    {t(`Ackumulerat nuvärde över ${params.years} år`, `Cumulative present value over ${params.years} years`)}
                   </CardTitle>
                   <Button
                     variant="outline"
@@ -605,7 +604,9 @@ function Index() {
                     disabled={pdfLoading}
                   >
                     <Download className="mr-1.5" />
-                    {pdfLoading ? "Genererar…" : "Sammanfattning som PDF"}
+                    {pdfLoading
+                      ? t("Genererar…", "Generating…")
+                      : t("Sammanfattning som PDF", "Summary as PDF")}
                   </Button>
                 </div>
               </CardHeader>
@@ -618,7 +619,7 @@ function Index() {
                         dataKey="year"
                         tick={{ fontSize: 12 }}
                         label={{
-                          value: "År",
+                          value: t("År", "Year"),
                           position: "insideBottom",
                           offset: -4,
                         }}
@@ -631,7 +632,7 @@ function Index() {
                             : `${v}`
                         }
                         label={{
-                          value: "Ackumulerat nuvärde (kr)",
+                          value: t("Ackumulerat nuvärde (kr)", "Cumulative present value (kr)"),
                           angle: -90,
                           position: "insideLeft",
                           style: { textAnchor: "middle" },
@@ -639,7 +640,7 @@ function Index() {
                       />
                       <Tooltip
                         formatter={(v) => fmtSek(Number(v))}
-                        labelFormatter={(l) => `År ${l}`}
+                        labelFormatter={(l) => `${t("År", "Year")} ${l}`}
                       />
                       <Legend />
                       <Line
@@ -660,9 +661,10 @@ function Index() {
                   </ResponsiveContainer>
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Startar på −investering år 0 och adderar varje års diskonterade
-                  nettokassaflöde. Växelriktarbyten dras av som negativa
-                  kassaflöden de år de inträffar.
+                  {t(
+                    "Startar på −investering år 0 och adderar varje års diskonterade nettokassaflöde. Växelriktarbyten dras av som negativa kassaflöden de år de inträffar.",
+                    "Starts at −investment in year 0 and adds each year's discounted net cash flow. Inverter replacements are deducted as negative cash flows in the years they occur.",
+                  )}
                 </p>
               </CardContent>
             </Card>
@@ -683,7 +685,7 @@ function Index() {
                       <XAxis
                         dataKey="year"
                         tick={{ fontSize: 12 }}
-                        label={{ value: "År", position: "insideBottom", offset: -4 }}
+                        label={{ value: t("År", "Year"), position: "insideBottom", offset: -4 }}
                       />
                       <YAxis
                         tick={{ fontSize: 12 }}
@@ -693,7 +695,7 @@ function Index() {
                       />
                       <Tooltip
                         formatter={(v) => fmtSek(Number(v))}
-                        labelFormatter={(l) => `År ${l}`}
+                        labelFormatter={(l) => `${t("År", "Year")} ${l}`}
                       />
                       <Legend />
                       <Line
@@ -720,7 +722,7 @@ function Index() {
             {!isSimple && (
             <Card>
               <CardHeader>
-                <CardTitle>Årlig elproduktion (kWh)</CardTitle>
+                <CardTitle>{t("Årlig elproduktion (kWh)", "Annual electricity production (kWh)")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-64 w-full">
@@ -731,7 +733,7 @@ function Index() {
                       <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip
                         formatter={(v) => `${fmtNum(Number(v))} kWh`}
-                        labelFormatter={(l) => `År ${l}`}
+                        labelFormatter={(l) => `${t("År", "Year")} ${l}`}
                       />
                       <Legend />
                       <Line
@@ -759,60 +761,60 @@ function Index() {
             {!isSimple && (
             <Card>
               <CardHeader>
-                <CardTitle>Teknisk jämförelse</CardTitle>
+                <CardTitle>{t("Teknisk jämförelse", "Technical comparison")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Parameter</TableHead>
+                      <TableHead>{t("Parameter", "Parameter")}</TableHead>
                       <TableHead className="text-right">Atmoce</TableHead>
                       <TableHead className="text-right">{reference.short}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <Row
-                      label="Växelriktare"
+                      label={t("Växelriktare", "Inverter")}
                       a={atmoce.inverterType}
                       b={reference.inverterType}
                     />
                     <Row
-                      label="Garanti växelriktare"
-                      a={`${atmoce.inverterWarrantyYears} år`}
-                      b={`${reference.inverterWarrantyYears} år`}
+                      label={t("Garanti växelriktare", "Inverter warranty")}
+                      a={`${atmoce.inverterWarrantyYears} ${t("år", "yrs")}`}
+                      b={`${reference.inverterWarrantyYears} ${t("år", "yrs")}`}
                     />
                     <Row
-                      label="Garanti batteri"
-                      a={`${atmoce.batteryWarrantyYears} år / ${atmoce.batteryWarrantyCycles ?? "—"} cykler`}
-                      b={`${reference.batteryWarrantyYears} år / ${reference.batteryWarrantyCycles ?? "—"} cykler`}
+                      label={t("Garanti batteri", "Battery warranty")}
+                      a={`${atmoce.batteryWarrantyYears} ${t("år", "yrs")} / ${atmoce.batteryWarrantyCycles ?? "—"} ${t("cykler", "cycles")}`}
+                      b={`${reference.batteryWarrantyYears} ${t("år", "yrs")} / ${reference.batteryWarrantyCycles ?? "—"} ${t("cykler", "cycles")}`}
                     />
                     <Row
-                      label="Batterikapacitet"
+                      label={t("Batterikapacitet", "Battery capacity")}
                       a={`${atmoce.batteryKwh} kWh`}
                       b={`${reference.batteryKwh} kWh`}
                     />
                     <Row
-                      label="Round-trip-effektivitet"
+                      label={t("Round-trip-effektivitet", "Round-trip efficiency")}
                       a={fmtPct(atmoce.batteryRoundTrip, 0)}
                       b={fmtPct(reference.batteryRoundTrip, 0)}
                     />
                     <Row
-                      label="Produktionsbonus (skugga/MPPT)"
+                      label={t("Produktionsbonus (skugga/MPPT)", "Production bonus (shade/MPPT)")}
                       a={fmtPct(atmoce.productionBonus, 0)}
                       b={fmtPct(reference.productionBonus, 0)}
                     />
                     <Row
-                      label="Panelnivå-övervakning"
-                      a={atmoce.panelLevelMonitoring ? "Ja" : "Nej"}
-                      b={reference.panelLevelMonitoring ? "Ja" : "Nej"}
+                      label={t("Panelnivå-övervakning", "Panel-level monitoring")}
+                      a={atmoce.panelLevelMonitoring ? t("Ja", "Yes") : t("Nej", "No")}
+                      b={reference.panelLevelMonitoring ? t("Ja", "Yes") : t("Nej", "No")}
                     />
                     <Row
-                      label="Pris PV"
+                      label={t("Pris PV", "PV price")}
                       a={fmtSek(atmoce.pvPrice)}
                       b={fmtSek(reference.pvPrice)}
                     />
                     <Row
-                      label="Pris ESS"
+                      label={t("Pris ESS", "ESS price")}
                       a={fmtSek(atmoce.essPrice)}
                       b={fmtSek(reference.essPrice)}
                     />
@@ -825,7 +827,7 @@ function Index() {
                       )}
                     />
                     <Row
-                      label="kr/kWh batteri"
+                      label={t("kr/kWh batteri", "kr/kWh battery")}
                       a={fmtNum(atmoce.essPrice / atmoce.batteryKwh, 0)}
                       b={fmtNum(reference.essPrice / reference.batteryKwh, 0)}
                     />
@@ -837,10 +839,10 @@ function Index() {
 
             {!isSimple && (
             <p className="text-xs text-muted-foreground">
-              Priser inkl. 15 % grönt teknikavdrag enligt prislista 2026. LCOE
-              beräknas med diskonterad produktion. IRR baseras på årliga
-              kassaflöden vid given diskonteringsränta. Antaganden kan justeras i
-              vänsterpanelen.
+              {t(
+                "Priser inkl. 15 % grönt teknikavdrag enligt prislista 2026. LCOE beräknas med diskonterad produktion. IRR baseras på årliga kassaflöden vid given diskonteringsränta. Antaganden kan justeras i vänsterpanelen.",
+                "Prices incl. 15% green tech deduction per 2026 price list. LCOE is computed with discounted production. IRR is based on annual cash flows at the given discount rate. Assumptions can be adjusted in the left panel.",
+              )}
             </p>
             )}
           </section>
