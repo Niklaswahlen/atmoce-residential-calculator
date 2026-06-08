@@ -1,6 +1,5 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import html2canvas from "html2canvas";
 import { fmtNum, fmtPct, fmtSek, type CalcResult } from "@/lib/calc";
 import type { SystemSpec } from "@/data/systems";
 import type { SnowMeltResult, SnowMeltMode } from "@/lib/snowmelt";
@@ -15,6 +14,7 @@ const MODE_LABEL: Record<SnowMeltMode, string> = {
 const CORAL: [number, number, number] = [237, 106, 74];
 const PLUM: [number, number, number] = [48, 30, 50];
 const MUTED: [number, number, number] = [110, 100, 110];
+const GRID: [number, number, number] = [220, 215, 220];
 
 export interface PdfInput {
   atmoce: SystemSpec;
@@ -26,7 +26,158 @@ export interface PdfInput {
   years: number;
   panels: number;
   wpPerPanel: number;
-  chartElement: HTMLElement | null;
+  chartElement?: HTMLElement | null;
+}
+
+function formatK(v: number): string {
+  const abs = Math.abs(v);
+  if (abs >= 1000) {
+    const k = Math.round(v / 1000);
+    return `${k}k`;
+  }
+  return `${Math.round(v)}`;
+}
+
+function drawNpvChart(
+  doc: jsPDF,
+  opts: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    years: number;
+    atmoceSeries: number[]; // length years+1, index 0 = year 0
+    refSeries: number[];
+    atmoceLabel: string;
+    refLabel: string;
+    title: string;
+  },
+) {
+  const { x, y, w, h, years, atmoceSeries, refSeries, atmoceLabel, refLabel, title } = opts;
+
+  // Outer card
+  doc.setDrawColor(...GRID);
+  doc.setLineWidth(0.2);
+  doc.setFillColor(255, 255, 255);
+  doc.rect(x, y, w, h, "FD");
+
+  // Title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...PLUM);
+  doc.text(title, x + 3, y + 5);
+
+  // Legend (top right)
+  const legendY = y + 4;
+  let legendX = x + w - 3;
+  const legendItems: { label: string; color: [number, number, number] }[] = [
+    { label: refLabel, color: PLUM },
+    { label: atmoceLabel, color: CORAL },
+  ];
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  legendItems.forEach((it) => {
+    const tw = doc.getTextWidth(it.label);
+    legendX -= tw;
+    doc.setTextColor(...PLUM);
+    doc.text(it.label, legendX, legendY);
+    legendX -= 2;
+    doc.setFillColor(...it.color);
+    doc.rect(legendX - 3, legendY - 2, 3, 1.6, "F");
+    legendX -= 5;
+  });
+
+  // Plot area
+  const padL = 14;
+  const padR = 4;
+  const padT = 8;
+  const padB = 8;
+  const plotX = x + padL;
+  const plotY = y + padT;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+
+  // Y range
+  const allVals = [...atmoceSeries, ...refSeries];
+  let yMin = Math.min(...allVals, 0);
+  let yMax = Math.max(...allVals, 0);
+  if (yMin === yMax) {
+    yMin -= 1;
+    yMax += 1;
+  }
+  // Pad 5%
+  const range = yMax - yMin;
+  yMin -= range * 0.05;
+  yMax += range * 0.05;
+
+  const toPx = (yr: number, val: number) => ({
+    px: plotX + (yr / years) * plotW,
+    py: plotY + plotH - ((val - yMin) / (yMax - yMin)) * plotH,
+  });
+
+  // Y ticks (5)
+  const yTicks = 4;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.5);
+  doc.setTextColor(...MUTED);
+  doc.setDrawColor(...GRID);
+  doc.setLineWidth(0.15);
+  for (let i = 0; i <= yTicks; i++) {
+    const val = yMin + ((yMax - yMin) * i) / yTicks;
+    const py = plotY + plotH - (i / yTicks) * plotH;
+    doc.line(plotX, py, plotX + plotW, py);
+    const label = formatK(val);
+    doc.text(label, plotX - 1.5, py + 1, { align: "right" });
+  }
+
+  // Zero line (if within range)
+  if (yMin < 0 && yMax > 0) {
+    const zeroY = plotY + plotH - ((0 - yMin) / (yMax - yMin)) * plotH;
+    doc.setDrawColor(140, 130, 140);
+    doc.setLineWidth(0.3);
+    doc.setLineDashPattern([0.8, 0.8], 0);
+    doc.line(plotX, zeroY, plotX + plotW, zeroY);
+    doc.setLineDashPattern([], 0);
+  }
+
+  // X ticks every 5 years
+  doc.setDrawColor(...GRID);
+  doc.setLineWidth(0.15);
+  doc.setTextColor(...MUTED);
+  const step = years >= 20 ? 5 : years >= 10 ? 2 : 1;
+  for (let yr = 0; yr <= years; yr += step) {
+    const { px } = toPx(yr, yMin);
+    const py = plotY + plotH;
+    doc.line(px, py, px, py + 1.2);
+    doc.text(String(yr), px, py + 4, { align: "center" });
+  }
+
+  // Axes
+  doc.setDrawColor(...PLUM);
+  doc.setLineWidth(0.3);
+  doc.line(plotX, plotY, plotX, plotY + plotH);
+  doc.line(plotX, plotY + plotH, plotX + plotW, plotY + plotH);
+
+  // Draw a series
+  const drawSeries = (series: number[], color: [number, number, number]) => {
+    doc.setDrawColor(...color);
+    doc.setLineWidth(0.7);
+    let prev: { px: number; py: number } | null = null;
+    series.forEach((val, yr) => {
+      const p = toPx(yr, val);
+      if (prev) doc.line(prev.px, prev.py, p.px, p.py);
+      prev = p;
+    });
+    // Dots
+    doc.setFillColor(...color);
+    series.forEach((val, yr) => {
+      const p = toPx(yr, val);
+      doc.circle(p.px, p.py, 0.4, "F");
+    });
+  };
+
+  drawSeries(refSeries, PLUM);
+  drawSeries(atmoceSeries, CORAL);
 }
 
 export async function generateSummaryPdf(input: PdfInput) {
