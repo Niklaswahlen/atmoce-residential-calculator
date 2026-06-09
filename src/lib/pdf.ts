@@ -273,7 +273,7 @@ export async function generateSummaryPdf(input: PdfInput) {
       a: fmtSek(atmoceResult.investment),
       b: fmtSek(refResult.investment),
       winner: cmpLower(atmoceResult.investment, refResult.investment),
-      delta: `Δ ${fmtSek(Math.abs(atmoceResult.investment - refResult.investment))}`,
+      delta: fmtSek(Math.abs(atmoceResult.investment - refResult.investment)),
     },
     {
       label: "Payback",
@@ -282,7 +282,7 @@ export async function generateSummaryPdf(input: PdfInput) {
       winner: paybackWinner,
       delta:
         paybackA !== null && paybackB !== null
-          ? `Δ ${fmtNum(Math.abs(paybackB - paybackA), 1)} år`
+          ? `${fmtNum(Math.abs(paybackB - paybackA), 1)} år`
           : undefined,
     },
     {
@@ -299,7 +299,7 @@ export async function generateSummaryPdf(input: PdfInput) {
       a: fmtSek(atmoceResult.npv),
       b: fmtSek(refResult.npv),
       winner: cmpHigher(atmoceResult.npv, refResult.npv),
-      delta: `Δ ${fmtSek(Math.abs(atmoceResult.npv - refResult.npv))}`,
+      delta: fmtSek(Math.abs(atmoceResult.npv - refResult.npv)),
     },
     {
       label: "LCOE",
@@ -312,14 +312,14 @@ export async function generateSummaryPdf(input: PdfInput) {
       a: `${fmtNum(atmoceResult.totalProduction)} kWh`,
       b: `${fmtNum(refResult.totalProduction)} kWh`,
       winner: cmpHigher(atmoceResult.totalProduction, refResult.totalProduction),
-      delta: `Δ ${fmtNum(Math.abs(atmoceResult.totalProduction - refResult.totalProduction))} kWh`,
+      delta: `${fmtNum(Math.abs(atmoceResult.totalProduction - refResult.totalProduction))} kWh`,
     },
     {
       label: "Total besparing",
       a: fmtSek(atmoceResult.totalSavings),
       b: fmtSek(refResult.totalSavings),
       winner: cmpHigher(atmoceResult.totalSavings, refResult.totalSavings),
-      delta: `Δ ${fmtSek(Math.abs(atmoceResult.totalSavings - refResult.totalSavings))}`,
+      delta: fmtSek(Math.abs(atmoceResult.totalSavings - refResult.totalSavings)),
     },
     {
       label: "Växelriktarbyten",
