@@ -1,22 +1,20 @@
 ## Diagnos
 
-På mobil (390px) blir headerns högerkolumn (Enkelt/Avancerat-växel + språkknapp + "Ladda ner PDF" + "Priser") bredare än skärmen. Eftersom den ligger i ett `grid-cols-[minmax(0,1fr)_auto]` med `shrink-0` på högerblocket, tvingar den dokumentets layoutbredd över viewporten. `overflow-x: hidden` klipper då scrollen — men `max-w-7xl mx-auto`-containrarna nedanför centreras inom den bredare layoutbredden, vilket gör att kort och inputfält "skjuts ut" till höger och ser kapade ut.
+I avancerat läge renderas `PanelLevelBonusCard` med `grid grid-cols-3 gap-6` (hårdkodat 3 kolumner i alla breakpoints). Värdena ("159 600 SEK" etc.) tvingar 3-kolumnsraden bredare än telefonens 390px, vilket gör att hela huvudkolumnen i sidans grid blir bredare än viewporten. Eftersom mobil-grid använder default-tracking (`auto`, inte `minmax(0,1fr)`) följer även asiden (Anläggning-kortet) med ut till samma bredd. I enkelt läge renderas kortet inte, så layouten håller sig inom skärmen.
 
 ## Åtgärder
 
-### 1. `src/components/AppHeader.tsx` — header får aldrig överskrida viewporten
-- På mobil: stacka logo och kontroller i två rader med `flex-col` så ingen rad behöver vara bredare än skärmen. På `sm:` återgår vi till den horisontella layouten.
-- Högerblocket blir `flex flex-wrap items-center justify-end gap-2 min-w-0` (utan `shrink-0`) så barnen kan brytas till ny rad.
-- "Ladda ner PDF"-knappen visar full text endast på `sm:`; på mobil bara ikon + kort label (t.ex. "PDF") och `size="sm"` med kompakt padding. `aria-label` sätts till hela texten.
-- "Priser"-länken får mindre padding på mobil och får också wrappa.
-- Logo-bilden behåller `shrink-0`; texten `min-w-0 truncate`.
+### 1. `src/routes/index.tsx` — explicit mobile grid
+Ändra ytter-griden i `<main>` så mobiltracken inte kan expandera under sina barn:
+- `grid min-w-0 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]`
+- → `grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]`
 
-### 2. `src/routes/index.tsx` — säkerställ att aside-innehållet ryms
-- Lägg `min-w-0` på `<aside>` så att grid-cellen kan krympa under sitt minsta innehåll utan att tvinga sidan bredare.
-- `CardContent` med `grid grid-cols-2 gap-3` kompletteras med `min-w-0` på själva grid-containern, och NumField-roten får `min-w-0` så att `<Input>` (`w-full`) faktiskt krymper i smala kolumner.
-- Reducera input-padding på mobil där `pr-12` + sufix gör fältet trångt: behåll `pr-12` men säkerställ att Input's `min-w-0` gör att det krymper istället för att svämma över.
+### 2. `src/components/PanelLevelBonusCard.tsx` — responsivt stat-grid
+- Wrappern `<div className="flex flex-wrap items-end gap-x-8 gap-y-3">` blir `w-full` och inre statgriden `grid grid-cols-3 gap-6` ändras till `grid w-full grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6` så de tre stat-rutorna staplas på mobil och bara visas trekolumnsmässigt från `sm:`. Inget innehåll tas bort.
+- Bonus-headern (`flex items-center justify-between gap-3`) får `flex-wrap` så lång titel + "Endast Atmoce"-badge wrappar istället för att tvinga bredd.
 
 ### 3. Verifiering
-- Efter ändringarna: öppna preview i 390×844 och kontrollera att (a) ingen horisontell scroll uppstår, (b) header-knappar wrappar snyggt, (c) alla input-fält och kort ligger inom skärmens kanter.
+- Förhandsvisning i 390×844 i avancerat läge: Anläggning-kortet och PanelLevelBonusCard ska ligga inom skärmens kant och ingen horisontell scroll uppstå.
+- Enkelt läge ska se ut som tidigare (PanelLevelBonusCard visas inte där).
 
-Inga affärslogik- eller stilsystemändringar — bara responsiv layout.
+Ingen logik eller copy ändras.

@@ -36,7 +36,7 @@ export function PanelLevelBonusCard({
   return (
     <Card className="border-atmoce/40 bg-atmoce-soft/30">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>{t("Bonus från panelnivå-styrning", "Panel-level control bonus")}</CardTitle>
           <span className="rounded-full bg-atmoce px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
             {t("Endast Atmoce", "Atmoce only")}
@@ -71,8 +71,8 @@ export function PanelLevelBonusCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
-          <div className="grid grid-cols-3 gap-6">
+        <div className="flex w-full flex-wrap items-end gap-x-8 gap-y-3">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
             <Stat
               label={t("Extra kWh / år", "Extra kWh / year")}
               value={`${fmtNum(extraKwhYear1)} kWh`}
