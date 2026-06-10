@@ -485,6 +485,8 @@ function Index() {
                       value={atmoceModules}
                       onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
                       step={1}
+                      min={1}
+                      editable
                       suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                     />
                     <div className="rounded-md bg-muted px-3 py-2 text-xs">
