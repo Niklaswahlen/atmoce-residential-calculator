@@ -323,8 +323,8 @@ function Index() {
         }
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+      <main className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
           <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
             <Card>
@@ -594,6 +594,7 @@ function Index() {
                     `Atmoce has ${atmoce.inverterWarrantyYears} years product warranty on its microinverters. Traditional systems often have a shorter warranty, meaning one or more replacements during the calculation period. Each replacement counts as ${fmtSek(INVERTER_REPLACEMENT_COST)} incl. VAT.`,
                   )}
                 </p>
+                <div className="w-full overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -649,6 +650,7 @@ function Index() {
                     </TableRow>
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
             )}
@@ -828,6 +830,7 @@ function Index() {
                 <CardTitle>{t("Teknisk jämförelse", "Technical comparison")}</CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="w-full overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -897,6 +900,7 @@ function Index() {
                     />
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
             )}
