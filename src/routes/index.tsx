@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -92,25 +92,57 @@ function NumField({
   onChange,
   step = 1,
   suffix,
+  min,
+  editable = false,
 }: {
   label: string;
   value: number;
   onChange: (n: number) => void;
   step?: number;
   suffix?: string;
+  min?: number;
+  editable?: boolean;
 }) {
+  const [draft, setDraft] = useState<string>(String(value));
+  useEffect(() => {
+    if (!editable) return;
+    setDraft(String(value));
+  }, [value, editable]);
   return (
     <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
-        <Input
-          type="number"
-          inputMode="decimal"
-          step={step}
-          value={Number.isFinite(value) ? value : ""}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
-        />
+        {editable ? (
+          <Input
+            type="number"
+            inputMode="numeric"
+            step={step}
+            min={min}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              const parsed = parseFloat(draft);
+              if (!Number.isFinite(parsed)) {
+                setDraft(String(value));
+                return;
+              }
+              const clamped = Math.max(min ?? parsed, Math.round(parsed));
+              onChange(clamped);
+              setDraft(String(clamped));
+            }}
+            className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
+          />
+        ) : (
+          <Input
+            type="number"
+            inputMode="decimal"
+            step={step}
+            min={min}
+            value={Number.isFinite(value) ? value : ""}
+            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+            className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
+          />
+        )}
         {suffix && (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
             {suffix}
@@ -485,6 +517,8 @@ function Index() {
                       value={atmoceModules}
                       onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
                       step={1}
+                      min={1}
+                      editable
                       suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                     />
                     <div className="rounded-md bg-muted px-3 py-2 text-xs">

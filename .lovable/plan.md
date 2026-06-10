@@ -1,20 +1,35 @@
 ## Diagnos
 
-I avancerat läge renderas `PanelLevelBonusCard` med `grid grid-cols-3 gap-6` (hårdkodat 3 kolumner i alla breakpoints). Värdena ("159 600 SEK" etc.) tvingar 3-kolumnsraden bredare än telefonens 390px, vilket gör att hela huvudkolumnen i sidans grid blir bredare än viewporten. Eftersom mobil-grid använder default-tracking (`auto`, inte `minmax(0,1fr)`) följer även asiden (Anläggning-kortet) med ut till samma bredd. I enkelt läge renderas kortet inte, så layouten håller sig inom skärmen.
+I `src/routes/index.tsx` (rad ~480) använder fältet "Atmoce batterimoduler" `NumField`, vars onChange direkt parsar och clampar:
 
-## Åtgärder
+```ts
+onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
+```
 
-### 1. `src/routes/index.tsx` — explicit mobile grid
-Ändra ytter-griden i `<main>` så mobiltracken inte kan expandera under sina barn:
-- `grid min-w-0 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]`
-- → `grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]`
+Och `NumField` i sin tur kör `parseFloat(e.target.value) || 0` på varje tangenttryckning.
 
-### 2. `src/components/PanelLevelBonusCard.tsx` — responsivt stat-grid
-- Wrappern `<div className="flex flex-wrap items-end gap-x-8 gap-y-3">` blir `w-full` och inre statgriden `grid grid-cols-3 gap-6` ändras till `grid w-full grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6` så de tre stat-rutorna staplas på mobil och bara visas trekolumnsmässigt från `sm:`. Inget innehåll tas bort.
-- Bonus-headern (`flex items-center justify-between gap-3`) får `flex-wrap` så lång titel + "Endast Atmoce"-badge wrappar istället för att tvinga bredd.
+När användaren på mobil markerar "12" och raderar "1" blir fältet tomt → parseFloat=NaN → 0 → clampas till 1 → fältet visar "1". Nästa tangent "2" appendas → "12". Det är därför man inte kan ändra till "2".
 
-### 3. Verifiering
-- Förhandsvisning i 390×844 i avancerat läge: Anläggning-kortet och PanelLevelBonusCard ska ligga inom skärmens kant och ingen horisontell scroll uppstå.
-- Enkelt läge ska se ut som tidigare (PanelLevelBonusCard visas inte där).
+## Åtgärd
 
-Ingen logik eller copy ändras.
+Låt användaren skriva fritt och clampa först vid blur, så de själva kan välja antal batterier utan att inputen tvångsskrivs om mitt i redigeringen.
+
+### `src/routes/index.tsx`
+
+1. Lokal redigerings-state för Atmoce batterimoduler som håller råsträngen medan användaren skriver.
+2. Byt ut `NumField` på den raden mot en `Input` (eller en ny `NumFieldEditable`) med:
+   - `type="number"`, `inputMode="numeric"`, `min={1}`, `step={1}`
+   - `value` = lokal sträng (tom tillåten under redigering)
+   - `onChange`: uppdaterar bara den lokala strängen, ingen clamp
+   - `onBlur`: parsar, clampar till heltal ≥ 1 och anropar `setAtmoceModulesState`; faller tillbaka till föregående värde om tomt
+   - Behåll `suffix` (`{fmtNum(atmoce.batteryKwh, 1)} kWh`) genom samma wrapper-layout som `NumField` använder
+3. Synka lokal sträng när `atmoceModules` ändras utifrån (t.ex. när referenssystem byts) via `useEffect`.
+
+Ingen ändring av beräkningar, referenssystem-matchning eller övriga fält. Endast denna input påverkas.
+
+## Verifiering
+
+I 390×844 preview:
+- Markera "12", radera, skriv "2" → fältet visar "2" och kWh-suffix uppdateras till `14,0 kWh`.
+- Backspace ett tecken i taget från "12" till tomt → fältet förblir tomt under redigering; vid blur återställs till sista giltiga värde (eller 1).
+- Skriv "0" eller blanka → vid blur clampas till 1.
