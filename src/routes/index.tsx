@@ -328,7 +328,7 @@ function Index() {
       />
 
       <main className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
             <Card>
