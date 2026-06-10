@@ -1,43 +1,22 @@
+## Diagnos
 
-## Mål
+På mobil (390px) blir headerns högerkolumn (Enkelt/Avancerat-växel + språkknapp + "Ladda ner PDF" + "Priser") bredare än skärmen. Eftersom den ligger i ett `grid-cols-[minmax(0,1fr)_auto]` med `shrink-0` på högerblocket, tvingar den dokumentets layoutbredd över viewporten. `overflow-x: hidden` klipper då scrollen — men `max-w-7xl mx-auto`-containrarna nedanför centreras inom den bredare layoutbredden, vilket gör att kort och inputfält "skjuts ut" till höger och ser kapade ut.
 
-Eliminera all horisontell scroll på mobilen och göra layouten helt stabil i sidled på iOS och Android, utan att ändra funktionalitet eller affärslogik.
+## Åtgärder
 
-## Ändringar
+### 1. `src/components/AppHeader.tsx` — header får aldrig överskrida viewporten
+- På mobil: stacka logo och kontroller i två rader med `flex-col` så ingen rad behöver vara bredare än skärmen. På `sm:` återgår vi till den horisontella layouten.
+- Högerblocket blir `flex flex-wrap items-center justify-end gap-2 min-w-0` (utan `shrink-0`) så barnen kan brytas till ny rad.
+- "Ladda ner PDF"-knappen visar full text endast på `sm:`; på mobil bara ikon + kort label (t.ex. "PDF") och `size="sm"` med kompakt padding. `aria-label` sätts till hela texten.
+- "Priser"-länken får mindre padding på mobil och får också wrappa.
+- Logo-bilden behåller `shrink-0`; texten `min-w-0 truncate`.
 
-### 1. `src/routes/__root.tsx` — viewport + global overflow-lock
-- Uppdatera viewport-metan till `width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover` för att hindra oavsiktlig pinch-zoom som destabiliserar layouten i sidled på iOS/Android.
-- Lägg till `className="overflow-x-hidden"` på `<html>` och `<body>` i `RootShell` så hela dokumentet är låst i sidled.
+### 2. `src/routes/index.tsx` — säkerställ att aside-innehållet ryms
+- Lägg `min-w-0` på `<aside>` så att grid-cellen kan krympa under sitt minsta innehåll utan att tvinga sidan bredare.
+- `CardContent` med `grid grid-cols-2 gap-3` kompletteras med `min-w-0` på själva grid-containern, och NumField-roten får `min-w-0` så att `<Input>` (`w-full`) faktiskt krymper i smala kolumner.
+- Reducera input-padding på mobil där `pr-12` + sufix gör fältet trångt: behåll `pr-12` men säkerställ att Input's `min-w-0` gör att det krymper istället för att svämma över.
 
-### 2. `src/styles.css` — globala skyddsregler
-Lägg till i `@layer base`:
-```css
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
-  overscroll-behavior-x: none;
-  -webkit-text-size-adjust: 100%;
-}
-#root { max-width: 100%; overflow-x: hidden; }
-img, svg, video, canvas { max-width: 100%; height: auto; }
-```
-Detta säkerställer att inga bilder, ikoner eller absolut-positionerade element kan tvinga fram horisontell scroll.
+### 3. Verifiering
+- Efter ändringarna: öppna preview i 390×844 och kontrollera att (a) ingen horisontell scroll uppstår, (b) header-knappar wrappar snyggt, (c) alla input-fält och kort ligger inom skärmens kanter.
 
-### 3. `src/routes/index.tsx` — wrappers och tabeller
-- Lägg `min-w-0` på flex/grid-barn där lång text annars tvingar förälderns bredd.
-- Wrappa breda `<Table>`-element i `<div className="w-full overflow-x-auto">` så själva tabellen kan scrolla internt, men inte sidan.
-- Recharts `ResponsiveContainer` får en wrapper `<div className="w-full min-w-0">` för att inte tvinga ut bredden.
-- Säkerställ att top-level `main`/section-containers använder `w-full max-w-full overflow-x-hidden` istället för fasta breddar.
-
-### 4. `src/components/AppHeader.tsx` — responsiv header
-- Byt `flex flex-wrap` på header-raden mot mönstret från instruktionerna: `grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between`.
-- Lägg `min-w-0` på logo-länken och `shrink-0` på språk/läge-knapparna, plus `truncate` på subtitle.
-- Reducera horisontellt padding på små skärmar (`px-4 sm:px-6`).
-
-### 5. Snabb verifiering
-- Bygget körs automatiskt; efter det öppnar jag förhandsvisningen i mobilviewport (390px) och kontrollerar att inga element överskrider skärmens bredd och att sidan inte kan scrollas i sidled.
-
-## Det jag INTE ändrar
-
-- Ingen logik i `calc.ts`, `pdf.ts`, prismotor eller datakällor.
-- Inga ändringar i färgsystem eller typografi.
+Inga affärslogik- eller stilsystemändringar — bara responsiv layout.

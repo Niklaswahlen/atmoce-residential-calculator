@@ -100,7 +100,7 @@ function NumField({
   suffix?: string;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
@@ -109,7 +109,7 @@ function NumField({
           step={step}
           value={Number.isFinite(value) ? value : ""}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          className={suffix ? "pr-12 font-mono" : "font-mono"}
+          className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
         />
         {suffix && (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -307,15 +307,19 @@ function Index() {
               size="sm"
               onClick={handleGeneratePdf}
               disabled={pdfLoading}
+              aria-label={t("Ladda ner PDF", "Download PDF")}
             >
-              <Download className="mr-1.5" />
-              {pdfLoading
-                ? t("Genererar…", "Generating…")
-                : t("Ladda ner PDF", "Download PDF")}
+              <Download className="sm:mr-1.5" />
+              <span className="hidden sm:inline">
+                {pdfLoading
+                  ? t("Genererar…", "Generating…")
+                  : t("Ladda ner PDF", "Download PDF")}
+              </span>
+              <span className="sm:hidden">PDF</span>
             </Button>
             <a
               href="/priser"
-              className="rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+              className="rounded-md border border-white/30 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-white/20 sm:px-3"
             >
               {t("Priser", "Prices")}
             </a>
@@ -326,7 +330,7 @@ function Index() {
       <main className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
         <div className="grid min-w-0 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
-          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">

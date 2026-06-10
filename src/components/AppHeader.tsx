@@ -24,7 +24,7 @@ export function AppHeader({ subtitle, right, showModeToggle = true }: Props) {
         backgroundPosition: "center",
       }}
     >
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:flex sm:flex-wrap sm:justify-between sm:gap-4 sm:px-6 sm:py-5">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-5">
         <Link to="/" className="flex min-w-0 items-center gap-3">
           <img
             src={logoAsset.url}
@@ -38,7 +38,7 @@ export function AppHeader({ subtitle, right, showModeToggle = true }: Props) {
           )}
         </Link>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center justify-start gap-2 sm:justify-end">
           {showModeToggle && (
             <div className="flex overflow-hidden rounded-md border border-white/30 bg-white/10 text-xs backdrop-blur">
               <button
