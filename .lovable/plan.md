@@ -1,51 +1,43 @@
-## Problem
 
-NPV-grafen saknas i PDF:n eftersom:
-1. Grafen i UI:t renderas bara i avancerat läge (`{!isSimple && ...}`). I enkelt läge är `npvChartRef.current` `null` → ingen bild i PDF:n.
-2. Även i avancerat läge kan html2canvas ha problem med Recharts (SVG, CSS-variabler, oklch-färger).
+## Mål
 
-## Lösning
-
-Skippa html2canvas. Rita linjediagrammet direkt i jsPDF utifrån de befintliga NPV-raderna. Då fungerar det i alla lägen och behöver ingen DOM-graf.
+Eliminera all horisontell scroll på mobilen och göra layouten helt stabil i sidled på iOS och Android, utan att ändra funktionalitet eller affärslogik.
 
 ## Ändringar
 
-**`src/lib/pdf.ts`**
-- Ta bort html2canvas-anropet och `chartElement`-användningen i NPV-sektionen.
-- Lägg till en ny hjälpare `drawNpvChart(doc, { x, y, w, h, atmoceSeries, refSeries, atmoceLabel, refLabel, years })` som ritar:
-  - Ramad ruta med titel "Ackumulerat nuvärde över N år".
-  - Y-axel med 4–5 ticks (auto-skalade till min/max över båda serierna, inkl. år 0 = −investering), formaterade som "120k" / "−50k".
-  - X-axel med ticks var 5:e år (0, 5, 10, …, N).
-  - Horisontell nollinje (streckad, grå).
-  - Två polylines i Atmoce-coral och referensgrå/plommon, med tunna prickar vid varje datapunkt.
-  - Liten legend uppe till höger med färgrutor + systemnamn.
-- Bygg dataserierna i `generateSummaryPdf` från `atmoceResult` och `refResult` (samma data som `npvChartData` i `index.tsx`: börja år 0 med −investering, sedan `cumulativeNpv` per år).
-- Behåll övrig layout (jämförelsetabell, resultatremsa, USP-kort) på samma A4-sida.
+### 1. `src/routes/__root.tsx` — viewport + global overflow-lock
+- Uppdatera viewport-metan till `width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover` för att hindra oavsiktlig pinch-zoom som destabiliserar layouten i sidled på iOS/Android.
+- Lägg till `className="overflow-x-hidden"` på `<html>` och `<body>` i `RootShell` så hela dokumentet är låst i sidled.
 
-**`src/routes/index.tsx`**
-- Sluta skicka `chartElement` till `generateSummaryPdf` (parametern kan tas bort från `PdfInput`).
-- `npvChartRef` kan tas bort.
-
-## Teknisk skiss
-
-```text
-+----------------------------------------------------------+
-| Ackumulerat nuvärde över 25 år           ■ Atmoce ■ Ref |
-|                                                          |
-|  150k |                              .─────              |
-|       |                       ─────'                     |
-|   0k  |───────────────────.───────────────────           |
-|       |              ___.'                               |
-| -100k |       ___.─'                                     |
-|       └──┬────┬────┬────┬────┬────┬                      |
-|          0    5   10   15   20   25                      |
-+----------------------------------------------------------+
+### 2. `src/styles.css` — globala skyddsregler
+Lägg till i `@layer base`:
+```css
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+}
+#root { max-width: 100%; overflow-x: hidden; }
+img, svg, video, canvas { max-width: 100%; height: auto; }
 ```
+Detta säkerställer att inga bilder, ikoner eller absolut-positionerade element kan tvinga fram horisontell scroll.
 
-Implementeras med `doc.line`, `doc.setDrawColor`, `doc.setLineWidth` och `doc.text`. Inga nya bibliotek.
+### 3. `src/routes/index.tsx` — wrappers och tabeller
+- Lägg `min-w-0` på flex/grid-barn där lång text annars tvingar förälderns bredd.
+- Wrappa breda `<Table>`-element i `<div className="w-full overflow-x-auto">` så själva tabellen kan scrolla internt, men inte sidan.
+- Recharts `ResponsiveContainer` får en wrapper `<div className="w-full min-w-0">` för att inte tvinga ut bredden.
+- Säkerställ att top-level `main`/section-containers använder `w-full max-w-full overflow-x-hidden` istället för fasta breddar.
 
-## Acceptanskriterier
+### 4. `src/components/AppHeader.tsx` — responsiv header
+- Byt `flex flex-wrap` på header-raden mot mönstret från instruktionerna: `grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between`.
+- Lägg `min-w-0` på logo-länken och `shrink-0` på språk/läge-knapparna, plus `truncate` på subtitle.
+- Reducera horisontellt padding på små skärmar (`px-4 sm:px-6`).
 
-- PDF:n innehåller NPV-grafen både i enkelt och avancerat läge.
-- Grafen visar båda systemen, en nollinje, och år 0…N på x-axeln.
-- Allt ryms fortfarande på en A4 utan överlapp.
+### 5. Snabb verifiering
+- Bygget körs automatiskt; efter det öppnar jag förhandsvisningen i mobilviewport (390px) och kontrollerar att inga element överskrider skärmens bredd och att sidan inte kan scrollas i sidled.
+
+## Det jag INTE ändrar
+
+- Ingen logik i `calc.ts`, `pdf.ts`, prismotor eller datakällor.
+- Inga ändringar i färgsystem eller typografi.
