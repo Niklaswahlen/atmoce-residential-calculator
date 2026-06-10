@@ -307,15 +307,19 @@ function Index() {
               size="sm"
               onClick={handleGeneratePdf}
               disabled={pdfLoading}
+              aria-label={t("Ladda ner PDF", "Download PDF")}
             >
-              <Download className="mr-1.5" />
-              {pdfLoading
-                ? t("Genererar…", "Generating…")
-                : t("Ladda ner PDF", "Download PDF")}
+              <Download className="sm:mr-1.5" />
+              <span className="hidden sm:inline">
+                {pdfLoading
+                  ? t("Genererar…", "Generating…")
+                  : t("Ladda ner PDF", "Download PDF")}
+              </span>
+              <span className="sm:hidden">PDF</span>
             </Button>
             <a
               href="/priser"
-              className="rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+              className="rounded-md border border-white/30 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-white/20 sm:px-3"
             >
               {t("Priser", "Prices")}
             </a>
@@ -326,7 +330,7 @@ function Index() {
       <main className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
         <div className="grid min-w-0 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
-          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
