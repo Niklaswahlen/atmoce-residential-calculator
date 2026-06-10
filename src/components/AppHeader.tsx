@@ -24,21 +24,21 @@ export function AppHeader({ subtitle, right, showModeToggle = true }: Props) {
         backgroundPosition: "center",
       }}
     >
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5">
-        <Link to="/" className="flex items-center gap-3">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:flex sm:flex-wrap sm:justify-between sm:gap-4 sm:px-6 sm:py-5">
+        <Link to="/" className="flex min-w-0 items-center gap-3">
           <img
             src={logoAsset.url}
             alt="Atmoce"
-            className="h-10 w-auto drop-shadow"
+            className="h-9 w-auto shrink-0 drop-shadow sm:h-10"
           />
           {subtitle && (
-            <span className="hidden text-sm text-white/80 md:inline">
+            <span className="hidden truncate text-sm text-white/80 md:inline">
               {subtitle}
             </span>
           )}
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {showModeToggle && (
             <div className="flex overflow-hidden rounded-md border border-white/30 bg-white/10 text-xs backdrop-blur">
               <button
