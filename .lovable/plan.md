@@ -1,35 +1,36 @@
-## Diagnos
+## Plan: säkerhets- och kodkvalitetsfixar
 
-I `src/routes/index.tsx` (rad ~480) använder fältet "Atmoce batterimoduler" `NumField`, vars onChange direkt parsar och clampar:
+### 1. `src/lib/pricing.functions.ts` — admin-lösenord
+- Ta bort konstanten `DEFAULT_ADMIN_PASSWORD`.
+- Skriv om `verifyAdmin` så att den kastar `"PRISER_ADMIN_PASSWORD is not configured on the server"` när env-variabeln saknas, och `"Unauthorized"` vid felaktigt lösenord.
+- Byt strängjämförelsen mot `crypto.timingSafeEqual`:
+  - Importera `timingSafeEqual` och `Buffer` (Node inbyggt).
+  - Om `typeof password !== "string"` eller längden skiljer sig från `expected` → `"Unauthorized"` (utan att anropa `timingSafeEqual`, för att undvika throw vid längdmismatch).
+  - Annars jämför `Buffer.from(password)` mot `Buffer.from(expected)` med `timingSafeEqual`; false → `"Unauthorized"`.
 
-```ts
-onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
-```
+Notering: användaren måste själv sätta `PRISER_ADMIN_PASSWORD` som server-secret — annars slutar `/priser`-inloggning fungera. Jag flaggar detta i svaret efter implementation.
 
-Och `NumField` i sin tur kör `parseFloat(e.target.value) || 0` på varje tangenttryckning.
+### 2. `.gitignore` + `.env.example`
+- Lägg till raden `.env` i `.gitignore` (efter befintliga `*.local`-block).
+- Skapa `.env.example` med samma nycklar som `.env` men tomma värden:
+  ```
+  SUPABASE_PROJECT_ID=
+  SUPABASE_PUBLISHABLE_KEY=
+  SUPABASE_URL=
+  VITE_SUPABASE_PROJECT_ID=
+  VITE_SUPABASE_PUBLISHABLE_KEY=
+  VITE_SUPABASE_URL=
+  ```
+- `.env` behålls i repo-trädet (kan inte tas bort via git-verktyg här); användaren får själv köra `git rm --cached .env` efter push.
 
-När användaren på mobil markerar "12" och raderar "1" blir fältet tomt → parseFloat=NaN → 0 → clampas till 1 → fältet visar "1". Nästa tangent "2" appendas → "12". Det är därför man inte kan ändra till "2".
+### 3. `src/routes/index.tsx` — NumField clamp
+- På rad 129 byt:
+  ```ts
+  const clamped = Math.max(min ?? parsed, Math.round(parsed));
+  ```
+  till:
+  ```ts
+  const clamped = Math.max(min ?? -Infinity, Math.round(parsed));
+  ```
 
-## Åtgärd
-
-Låt användaren skriva fritt och clampa först vid blur, så de själva kan välja antal batterier utan att inputen tvångsskrivs om mitt i redigeringen.
-
-### `src/routes/index.tsx`
-
-1. Lokal redigerings-state för Atmoce batterimoduler som håller råsträngen medan användaren skriver.
-2. Byt ut `NumField` på den raden mot en `Input` (eller en ny `NumFieldEditable`) med:
-   - `type="number"`, `inputMode="numeric"`, `min={1}`, `step={1}`
-   - `value` = lokal sträng (tom tillåten under redigering)
-   - `onChange`: uppdaterar bara den lokala strängen, ingen clamp
-   - `onBlur`: parsar, clampar till heltal ≥ 1 och anropar `setAtmoceModulesState`; faller tillbaka till föregående värde om tomt
-   - Behåll `suffix` (`{fmtNum(atmoce.batteryKwh, 1)} kWh`) genom samma wrapper-layout som `NumField` använder
-3. Synka lokal sträng när `atmoceModules` ändras utifrån (t.ex. när referenssystem byts) via `useEffect`.
-
-Ingen ändring av beräkningar, referenssystem-matchning eller övriga fält. Endast denna input påverkas.
-
-## Verifiering
-
-I 390×844 preview:
-- Markera "12", radera, skriv "2" → fältet visar "2" och kWh-suffix uppdateras till `14,0 kWh`.
-- Backspace ett tecken i taget från "12" till tomt → fältet förblir tomt under redigering; vid blur återställs till sista giltiga värde (eller 1).
-- Skriv "0" eller blanka → vid blur clampas till 1.
+Inga andra funktionella eller stilmässiga ändringar.
