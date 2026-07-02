@@ -126,7 +126,7 @@ function NumField({
                 setDraft(String(value));
                 return;
               }
-              const clamped = Math.max(min ?? parsed, Math.round(parsed));
+              const clamped = Math.max(min ?? -Infinity, Math.round(parsed));
               onChange(clamped);
               setDraft(String(clamped));
             }}
