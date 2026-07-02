@@ -20,10 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/app-context";
 import type { Component, Side } from "@/lib/pricing";
 import { PRICING_KEY } from "@/lib/usePricing";
+import { adminUpsertComponent, adminDeleteComponent } from "@/lib/pricing.functions";
+import { getAdminPassword } from "@/lib/priser-auth";
 import { fmtSek } from "@/lib/calc";
 
 const CATEGORIES = [
@@ -57,17 +58,19 @@ export function ComponentsTable({ components }: Props) {
 
   const update = useMutation({
     mutationFn: async (row: Partial<Component> & { id: string }) => {
-      const { error } = await supabase
-        .from("components")
-        .update({
-          name: row.name,
-          category: row.category,
-          side: row.side,
-          unit_price_ex_vat: row.unit_price_ex_vat,
-          unit_kwh: row.unit_kwh,
-        })
-        .eq("id", row.id);
-      if (error) throw error;
+      await adminUpsertComponent({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            id: row.id,
+            name: row.name,
+            category: row.category,
+            side: row.side,
+            unit_price_ex_vat: row.unit_price_ex_vat,
+            unit_kwh: row.unit_kwh,
+          },
+        },
+      });
     },
     onSuccess: () => {
       toast.success(t("Komponent sparad", "Component saved"));
@@ -78,31 +81,9 @@ export function ComponentsTable({ components }: Props) {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("components").delete().eq("id", id);
-      if (error) {
-        // FK violation → find what still references this component
-        if ((error as { code?: string }).code === "23503") {
-          const [scl, bc, sc] = await Promise.all([
-            supabase.from("system_component_lines").select("system_id").eq("component_id", id),
-            supabase
-              .from("battery_configs")
-              .select("name, base_component_id, module_component_id, bms_component_id")
-              .or(`base_component_id.eq.${id},module_component_id.eq.${id},bms_component_id.eq.${id}`),
-            supabase.from("system_configs").select("name").eq("battery_module_id", id),
-          ]);
-          const refs: string[] = [];
-          const systems = Array.from(new Set((scl.data ?? []).map((r) => r.system_id)));
-          if (systems.length) refs.push(`system: ${systems.join(", ")}`);
-          if (bc.data?.length) refs.push(`batterikonfig: ${bc.data.map((b) => b.name).join(", ")}`);
-          if (sc.data?.length) refs.push(`system (batterimodul): ${sc.data.map((s) => s.name).join(", ")}`);
-          throw new Error(
-            refs.length
-              ? `Används av — ${refs.join(" · ")}`
-              : error.message,
-          );
-        }
-        throw error;
-      }
+      await adminDeleteComponent({
+        data: { password: getAdminPassword(), data: { id } },
+      });
     },
     onSuccess: () => {
       toast.success(t("Komponent raderad", "Component deleted"));
@@ -114,15 +95,20 @@ export function ComponentsTable({ components }: Props) {
   const add = useMutation({
     mutationFn: async () => {
       const id = `custom_${Date.now()}`;
-      const { error } = await supabase.from("components").insert({
-        id,
-        name: t("Ny komponent", "New component"),
-        category: "accessory",
-        side: "pv",
-        unit: "st",
-        unit_price_ex_vat: 0,
+      await adminUpsertComponent({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            id,
+            insert: true,
+            name: t("Ny komponent", "New component"),
+            category: "accessory",
+            side: "pv",
+            unit: "st",
+            unit_price_ex_vat: 0,
+          },
+        },
       });
-      if (error) throw error;
     },
     onSuccess: () => invalidate(),
     onError: (e: Error) => toast.error(e.message),

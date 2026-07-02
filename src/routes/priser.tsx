@@ -10,7 +10,11 @@ import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/AppHeader";
 import { useT } from "@/lib/app-context";
 import { usePricingData, PRICING_KEY } from "@/lib/usePricing";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  adminUpsertSystemConfig,
+  adminDeleteSystemConfig,
+} from "@/lib/pricing.functions";
+import { setAdminPassword, getAdminPassword } from "@/lib/priser-auth";
 import { GlobalSettingsCard } from "@/components/priser/GlobalSettingsCard";
 import { ComponentsTable } from "@/components/priser/ComponentsTable";
 import { SystemConfigCard } from "@/components/priser/SystemConfigCard";
@@ -30,7 +34,6 @@ export const Route = createFileRoute("/priser")({
   component: PricesPageGate,
 });
 
-const PRICES_PASSWORD = "S3nergia!";
 const PRICES_AUTH_KEY = "priser_authed";
 
 function PricesPageGate() {
@@ -42,7 +45,13 @@ function PricesPageGate() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  if (authed) return <PricesPage />;
+  if (authed) {
+    // Restore the in-memory password if the session is authed but the
+    // module-level store was cleared by a reload.
+    const stored = typeof window !== "undefined" ? sessionStorage.getItem("priser_pw") : null;
+    if (stored) setAdminPassword(stored);
+    return <PricesPage />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,14 +63,25 @@ function PricesPageGate() {
           </CardHeader>
           <CardContent>
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (password === PRICES_PASSWORD) {
-                  sessionStorage.setItem(PRICES_AUTH_KEY, "1");
-                  setAuthed(true);
-                } else {
-                  setError(t("Fel lösenord", "Wrong password"));
+                // Verify server-side by attempting a no-op admin call.
+                try {
+                  await adminUpsertSystemConfig({
+                    data: { password, data: { id: "__probe__" } },
+                  });
+                } catch (err) {
+                  const msg = (err as Error).message || "";
+                  if (msg.includes("Unauthorized")) {
+                    setError(t("Fel lösenord", "Wrong password"));
+                    return;
+                  }
+                  // Any other error (e.g. row not found) means password was OK.
                 }
+                setAdminPassword(password);
+                sessionStorage.setItem(PRICES_AUTH_KEY, "1");
+                sessionStorage.setItem("priser_pw", password);
+                setAuthed(true);
               }}
               className="flex flex-col gap-3"
             >
@@ -106,14 +126,19 @@ function PricesPage() {
         throw new Error(t("Fyll i ID, namn och kort namn", "Fill in ID, name and short name"));
       }
       const maxSort = Math.max(0, ...(data?.systems.map((s) => s.sort_order) ?? [0]));
-      const { error } = await supabase.from("system_configs").insert({
-        id,
-        name: newName.trim(),
-        short: newShort.trim(),
-        sort_order: maxSort + 1,
-        default_battery_modules: 1,
+      await adminUpsertSystemConfig({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            id,
+            insert: true,
+            name: newName.trim(),
+            short: newShort.trim(),
+            sort_order: maxSort + 1,
+            default_battery_modules: 1,
+          },
+        },
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       toast.success(t("System skapat", "System created"));
@@ -125,10 +150,9 @@ function PricesPage() {
 
   const deleteSystem = useMutation({
     mutationFn: async (id: string) => {
-      const { error: e1 } = await supabase.from("system_component_lines").delete().eq("system_id", id);
-      if (e1) throw e1;
-      const { error } = await supabase.from("system_configs").delete().eq("id", id);
-      if (error) throw error;
+      await adminDeleteSystemConfig({
+        data: { password: getAdminPassword(), data: { id } },
+      });
     },
     onSuccess: () => {
       toast.success(t("System borttaget", "System deleted"));

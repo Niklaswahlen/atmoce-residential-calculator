@@ -13,11 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/app-context";
 import { fmtNum } from "@/lib/calc";
 import type { BatteryConfig, Component } from "@/lib/pricing";
 import { PRICING_KEY } from "@/lib/usePricing";
+import { adminUpsertBatteryConfig, adminDeleteBatteryConfig } from "@/lib/pricing.functions";
+import { getAdminPassword } from "@/lib/priser-auth";
 
 interface Props {
   batteryConfigs: BatteryConfig[];
@@ -42,16 +43,21 @@ export function BatteryConfigsTab({ batteryConfigs, components }: Props) {
         throw new Error(t("Lägg till en batterimodul i komponentlistan först", "Add a battery module to the component list first"));
       }
       const id = `custom_${Date.now()}`;
-      const { error } = await supabase.from("battery_configs").insert({
-        id,
-        name: t("Ny batterikonfiguration", "New battery configuration"),
-        short: t("Ny", "New"),
-        module_component_id: firstModule.id,
-        min_modules: 1,
-        max_modules: 10,
-        sort_order: (batteryConfigs[batteryConfigs.length - 1]?.sort_order ?? 0) + 10,
+      await adminUpsertBatteryConfig({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            id,
+            insert: true,
+            name: t("Ny batterikonfiguration", "New battery configuration"),
+            short: t("Ny", "New"),
+            module_component_id: firstModule.id,
+            min_modules: 1,
+            max_modules: 10,
+            sort_order: (batteryConfigs[batteryConfigs.length - 1]?.sort_order ?? 0) + 10,
+          },
+        },
       });
-      if (error) throw error;
     },
     onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
@@ -106,19 +112,21 @@ function ConfigCard({
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("battery_configs")
-        .update({
-          name: draft.name,
-          short: draft.short,
-          base_component_id: draft.base_component_id,
-          module_component_id: draft.module_component_id,
-          bms_component_id: draft.bms_component_id,
-          min_modules: draft.min_modules,
-          max_modules: draft.max_modules,
-        })
-        .eq("id", config.id);
-      if (error) throw error;
+      await adminUpsertBatteryConfig({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            id: config.id,
+            name: draft.name,
+            short: draft.short,
+            base_component_id: draft.base_component_id,
+            module_component_id: draft.module_component_id,
+            bms_component_id: draft.bms_component_id,
+            min_modules: draft.min_modules,
+            max_modules: draft.max_modules,
+          },
+        },
+      });
     },
     onSuccess: () => {
       toast.success(t("Batterikonfiguration sparad", "Battery configuration saved"));
@@ -129,8 +137,9 @@ function ConfigCard({
 
   const remove = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("battery_configs").delete().eq("id", config.id);
-      if (error) throw error;
+      await adminDeleteBatteryConfig({
+        data: { password: getAdminPassword(), data: { id: config.id } },
+      });
     },
     onSuccess: () => {
       toast.success(t("Borttagen", "Removed"));

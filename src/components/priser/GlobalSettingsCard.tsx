@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/app-context";
 import type { PriceSettings } from "@/lib/pricing";
 import { PRICING_KEY } from "@/lib/usePricing";
+import { adminUpdatePriceSettings } from "@/lib/pricing.functions";
+import { getAdminPassword } from "@/lib/priser-auth";
 
 interface Props {
   settings: PriceSettings;
@@ -31,16 +32,17 @@ export function GlobalSettingsCard({ settings }: Props) {
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("price_settings")
-        .update({
-          margin_pct: margin / 100,
-          vat_pct: vat / 100,
-          gta_pv_pct: gtaPv / 100,
-          gta_ess_pct: gtaEss / 100,
-        })
-        .eq("id", "current");
-      if (error) throw error;
+      await adminUpdatePriceSettings({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            margin_pct: margin / 100,
+            vat_pct: vat / 100,
+            gta_pv_pct: gtaPv / 100,
+            gta_ess_pct: gtaEss / 100,
+          },
+        },
+      });
     },
     onSuccess: () => {
       toast.success(t("Inställningar sparade", "Settings saved"));
