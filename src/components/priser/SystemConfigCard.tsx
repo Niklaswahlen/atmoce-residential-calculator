@@ -26,8 +26,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/app-context";
+import {
+  adminUpsertSystemConfig,
+  adminUpsertSystemLine,
+  adminDeleteSystemLine,
+} from "@/lib/pricing.functions";
+import { getAdminPassword } from "@/lib/priser-auth";
 import { fmtSek, fmtNum } from "@/lib/calc";
 import {
   computeSystemPrice,
@@ -96,16 +101,18 @@ export function SystemConfigCard({ config, lines, components, settings, panels, 
 
   const saveConfig = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("system_configs")
-        .update({
-          battery_config_id: batteryConfigId,
-          default_battery_modules: batteryModules,
-          pv_override_inc_vat: pvOverride === "" ? null : parseFloat(pvOverride),
-          ess_override_inc_vat: essOverride === "" ? null : parseFloat(essOverride),
-        })
-        .eq("id", config.id);
-      if (error) throw error;
+      await adminUpsertSystemConfig({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            id: config.id,
+            battery_config_id: batteryConfigId,
+            default_battery_modules: batteryModules,
+            pv_override_inc_vat: pvOverride === "" ? null : parseFloat(pvOverride),
+            ess_override_inc_vat: essOverride === "" ? null : parseFloat(essOverride),
+          },
+        },
+      });
     },
     onSuccess: () => {
       toast.success(t("System sparat", "System saved"));
@@ -274,15 +281,17 @@ function SideTable({
 
   const updateLine = useMutation({
     mutationFn: async (line: Partial<SystemLine> & { id: string }) => {
-      const { error } = await supabase
-        .from("system_component_lines")
-        .update({
-          component_id: line.component_id,
-          qty_kind: line.qty_kind,
-          qty_value: line.qty_value,
-        })
-        .eq("id", line.id);
-      if (error) throw error;
+      await adminUpsertSystemLine({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            id: line.id,
+            component_id: line.component_id,
+            qty_kind: line.qty_kind,
+            qty_value: line.qty_value,
+          },
+        },
+      });
     },
     onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
@@ -290,8 +299,9 @@ function SideTable({
 
   const deleteLine = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("system_component_lines").delete().eq("id", id);
-      if (error) throw error;
+      await adminDeleteSystemLine({
+        data: { password: getAdminPassword(), data: { id } },
+      });
     },
     onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
@@ -301,15 +311,20 @@ function SideTable({
     mutationFn: async () => {
       const firstComponent = components.find((c) => c.side === side);
       if (!firstComponent) return;
-      const { error } = await supabase.from("system_component_lines").insert({
-        system_id: systemId,
-        component_id: firstComponent.id,
-        side,
-        qty_kind: "fixed",
-        qty_value: 1,
-        sort_order: lines.length + 1,
+      await adminUpsertSystemLine({
+        data: {
+          password: getAdminPassword(),
+          data: {
+            insert: true,
+            system_id: systemId,
+            component_id: firstComponent.id,
+            side,
+            qty_kind: "fixed",
+            qty_value: 1,
+            sort_order: lines.length + 1,
+          },
+        },
       });
-      if (error) throw error;
     },
     onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
