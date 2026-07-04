@@ -1027,6 +1027,62 @@ function Index() {
   );
 }
 
+function PriceField({
+  label,
+  value,
+  estimated,
+  isOverride,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  estimated: number;
+  isOverride: boolean;
+  onChange: (n: number | null) => void;
+}) {
+  const [draft, setDraft] = useState<string>(String(Math.round(value)));
+  useEffect(() => {
+    setDraft(String(Math.round(value)));
+  }, [value]);
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <div className="relative">
+        <Input
+          type="number"
+          inputMode="numeric"
+          step={100}
+          min={0}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            const parsed = parseFloat(draft);
+            if (!Number.isFinite(parsed) || parsed < 0) {
+              setDraft(String(Math.round(value)));
+              return;
+            }
+            const rounded = Math.round(parsed);
+            if (rounded === Math.round(estimated)) {
+              onChange(null);
+            } else {
+              onChange(rounded);
+            }
+          }}
+          className="w-full min-w-0 pr-14 font-mono"
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          kr
+        </span>
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        {isOverride
+          ? `Estimat: ${fmtSek(estimated)}`
+          : "Använder modellens estimat"}
+      </div>
+    </div>
+  );
+}
+
 function SystemCard({
   title,
   isAtmoce,
