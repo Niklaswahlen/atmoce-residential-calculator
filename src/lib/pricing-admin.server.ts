@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { Buffer } from "node:buffer";
 
 export function verifyAdmin(password: unknown) {
   const expected = process.env.PRISER_ADMIN_PASSWORD;
