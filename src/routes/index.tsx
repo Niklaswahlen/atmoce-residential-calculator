@@ -172,6 +172,9 @@ function Index() {
 
   const { data: pricing } = usePricingData();
   const [atmoceModulesState, setAtmoceModulesState] = useState<number | null>(null);
+  // Prisöverride: null = använd modellens estimerade pris; annars fast pris (ink moms).
+  const [atmocePriceOverride, setAtmocePriceOverride] = useState<number | null>(null);
+  const [refPriceOverride, setRefPriceOverride] = useState<number | null>(null);
 
   const atmoceConfig = pricing?.systems.find((s) => s.id === "atmoce");
   const refConfig = pricing?.systems.find((s) => s.id === referenceId);
@@ -214,6 +217,25 @@ function Index() {
   const atmoce = systems.atmoce;
   const reference = systems[referenceId];
 
+  // Modellens estimerade totalpris (pv + ess, ink moms efter GTA).
+  const atmoceEstimated = atmoce.pvPrice + atmoce.essPrice;
+  const refEstimated = reference.pvPrice + reference.essPrice;
+
+  // Effektiv pris som används i kalkylen (override eller estimat).
+  const atmocePriceEffective = atmocePriceOverride ?? atmoceEstimated;
+  const refPriceEffective = refPriceOverride ?? refEstimated;
+
+  // Applicera prisoverride genom att ersätta pvPrice och nolla essPrice på systemobjektet
+  // som calc() summerar (investment = pvPrice + essPrice).
+  const atmoceForCalc = useMemo(
+    () => ({ ...atmoce, pvPrice: atmocePriceEffective, essPrice: 0 }),
+    [atmoce, atmocePriceEffective],
+  );
+  const referenceForCalc = useMemo(
+    () => ({ ...reference, pvPrice: refPriceEffective, essPrice: 0 }),
+    [reference, refPriceEffective],
+  );
+
   const set = <K extends keyof CalcParams>(k: K) => (v: number) =>
     setParams((p) => ({ ...p, [k]: v }));
 
@@ -235,8 +257,8 @@ function Index() {
   );
 
   const atmoceWithBonus = useMemo(
-    () => ({ ...atmoce, productionBonus: panelBonusPct / 100 }),
-    [atmoce, panelBonusPct],
+    () => ({ ...atmoceForCalc, productionBonus: panelBonusPct / 100 }),
+    [atmoceForCalc, panelBonusPct],
   );
 
   const atmoceParams: CalcParams = {
@@ -252,8 +274,8 @@ function Index() {
   );
   const refParams: CalcParams = { ...params, inverterReplacements: refReplacements };
   const refResult = useMemo(
-    () => calculate(reference, refParams),
-    [reference, refParams],
+    () => calculate(referenceForCalc, refParams),
+    [referenceForCalc, refParams],
   );
 
   const chartData = useMemo(
