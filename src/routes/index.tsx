@@ -434,43 +434,132 @@ function Index() {
               {t("Dina siffror", "Your numbers")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <NumField
-              label={t("Antal solpaneler", "Number of solar panels")}
-              value={params.panels}
-              onChange={set("panels")}
-              editable
-              min={1}
-            />
-            <PriceField
-              label={t("Kostnad Atmoce (ink moms, efter GTA)", "Atmoce cost (incl. VAT, after GTA)")}
-              value={atmocePriceEffective}
-              estimated={atmoceEstimated}
-              isOverride={atmocePriceOverride !== null}
-              onChange={(n) => setAtmocePriceOverride(n)}
-            />
-            <PriceField
-              label={t("Kostnad annat system (ink GTA)", "Other system cost (incl. GTA)")}
-              value={refPriceEffective}
-              estimated={refEstimated}
-              isOverride={refPriceOverride !== null}
-              onChange={(n) => setRefPriceOverride(n)}
-            />
-            <div className="flex items-end">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  setAtmocePriceOverride(null);
-                  setRefPriceOverride(null);
-                }}
-                disabled={atmocePriceOverride === null && refPriceOverride === null}
-              >
-                {t("Estimera kostnad", "Estimate cost")}
-              </Button>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
+              <NumField
+                label={t("Antal solpaneler", "Number of solar panels")}
+                value={params.panels}
+                onChange={set("panels")}
+                editable
+                min={1}
+              />
+              <PriceField
+                label={t("Kostnad Atmoce (ink moms, efter GTA)", "Atmoce cost (incl. VAT, after GTA)")}
+                value={atmocePriceEffective}
+                estimated={atmoceEstimated}
+                isOverride={atmocePriceOverride !== null}
+                onChange={(n) => setAtmocePriceOverride(n)}
+              />
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    setAtmocePriceOverride(null);
+                    setRefPriceOverride(null);
+                    setRefKwhOverride(null);
+                  }}
+                  disabled={
+                    atmocePriceOverride === null &&
+                    refPriceOverride === null &&
+                    refKwhOverride === null
+                  }
+                >
+                  {t("Estimera kostnad", "Estimate cost")}
+                </Button>
+              </div>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="min-w-0 space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("Annat system (referens)", "Other system (reference)")}
+                </Label>
+                <Select
+                  value={refChoice}
+                  onValueChange={(v) => {
+                    setRefChoice(v as SystemId | "custom");
+                    setRefPriceOverride(null);
+                    setRefKwhOverride(null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SYSTEM_ORDER.filter((id) => id !== "atmoce").map((id) => (
+                      <SelectItem key={id} value={id}>
+                        {SYSTEMS[id].name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom">
+                      {t("Eget system…", "Own system…")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <KwhField
+                label={t("Batterikapacitet (kWh)", "Battery capacity (kWh)")}
+                value={refKwhEffective}
+                estimated={isCustomRef ? null : refKwhAuto}
+                isOverride={!isCustomRef && refKwhOverride !== null}
+                onChange={(n) => {
+                  if (isCustomRef) {
+                    if (n !== null) setCustomBatteryKwh(n);
+                  } else {
+                    setRefKwhOverride(n);
+                  }
+                }}
+              />
+              <PriceField
+                label={t("Kostnad annat system (ink GTA)", "Other system cost (incl. GTA)")}
+                value={refPriceEffective}
+                estimated={refEstimated}
+                isOverride={isCustomRef ? true : refPriceOverride !== null}
+                hideEstimate={isCustomRef}
+                onChange={(n) => {
+                  if (isCustomRef) {
+                    if (n !== null) setCustomPrice(n);
+                  } else {
+                    setRefPriceOverride(n);
+                  }
+                }}
+              />
+            </div>
+
+            {isCustomRef && (
+              <div className="grid gap-3 rounded-md border border-dashed bg-muted/30 p-3 sm:grid-cols-3">
+                <NumField
+                  label={t("Round-trip effektivitet", "Round-trip efficiency")}
+                  value={customRoundTrip}
+                  onChange={(v) => setCustomRoundTrip(Math.max(1, Math.min(100, v)))}
+                  suffix="%"
+                  step={1}
+                  editable
+                  min={1}
+                />
+                <NumField
+                  label={t("Garanti växelriktare", "Inverter warranty")}
+                  value={customInvWarranty}
+                  onChange={(v) => setCustomInvWarranty(Math.max(0, v))}
+                  suffix={t("år", "yrs")}
+                  step={1}
+                  editable
+                  min={0}
+                />
+                <NumField
+                  label={t("Garanti batteri", "Battery warranty")}
+                  value={customBatWarranty}
+                  onChange={(v) => setCustomBatWarranty(Math.max(0, v))}
+                  suffix={t("år", "yrs")}
+                  step={1}
+                  editable
+                  min={0}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
