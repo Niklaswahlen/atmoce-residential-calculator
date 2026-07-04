@@ -1153,12 +1153,14 @@ function PriceField({
   value,
   estimated,
   isOverride,
+  hideEstimate,
   onChange,
 }: {
   label: string;
   value: number;
   estimated: number;
   isOverride: boolean;
+  hideEstimate?: boolean;
   onChange: (n: number | null) => void;
 }) {
   const [draft, setDraft] = useState<string>(String(Math.round(value)));
@@ -1196,9 +1198,69 @@ function PriceField({
         </span>
       </div>
       <div className="text-[11px] text-muted-foreground">
-        {isOverride
+        {hideEstimate
+          ? "\u00A0"
+          : isOverride
           ? `Estimat: ${fmtSek(estimated)}`
           : "Använder modellens estimat"}
+      </div>
+    </div>
+  );
+}
+
+function KwhField({
+  label,
+  value,
+  estimated,
+  isOverride,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  estimated: number | null;
+  isOverride: boolean;
+  onChange: (n: number | null) => void;
+}) {
+  const [draft, setDraft] = useState<string>(String(Math.round((value ?? 0) * 100) / 100));
+  useEffect(() => {
+    setDraft(String(Math.round((value ?? 0) * 100) / 100));
+  }, [value]);
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <div className="relative">
+        <Input
+          type="number"
+          inputMode="decimal"
+          step={0.1}
+          min={0}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            const parsed = parseFloat(draft);
+            if (!Number.isFinite(parsed) || parsed < 0) {
+              setDraft(String(Math.round((value ?? 0) * 100) / 100));
+              return;
+            }
+            const rounded = Math.round(parsed * 100) / 100;
+            if (estimated !== null && Math.abs(rounded - estimated) < 0.005) {
+              onChange(null);
+            } else {
+              onChange(rounded);
+            }
+          }}
+          className="w-full min-w-0 pr-14 font-mono"
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          kWh
+        </span>
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        {estimated === null
+          ? "\u00A0"
+          : isOverride
+            ? `Auto: ${fmtNum(estimated, 2)} kWh`
+            : "Auto (matchas till Atmoce)"}
       </div>
     </div>
   );
