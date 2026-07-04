@@ -172,6 +172,9 @@ function Index() {
 
   const { data: pricing } = usePricingData();
   const [atmoceModulesState, setAtmoceModulesState] = useState<number | null>(null);
+  // Prisöverride: null = använd modellens estimerade pris; annars fast pris (ink moms).
+  const [atmocePriceOverride, setAtmocePriceOverride] = useState<number | null>(null);
+  const [refPriceOverride, setRefPriceOverride] = useState<number | null>(null);
 
   const atmoceConfig = pricing?.systems.find((s) => s.id === "atmoce");
   const refConfig = pricing?.systems.find((s) => s.id === referenceId);
@@ -214,6 +217,25 @@ function Index() {
   const atmoce = systems.atmoce;
   const reference = systems[referenceId];
 
+  // Modellens estimerade totalpris (pv + ess, ink moms efter GTA).
+  const atmoceEstimated = atmoce.pvPrice + atmoce.essPrice;
+  const refEstimated = reference.pvPrice + reference.essPrice;
+
+  // Effektiv pris som används i kalkylen (override eller estimat).
+  const atmocePriceEffective = atmocePriceOverride ?? atmoceEstimated;
+  const refPriceEffective = refPriceOverride ?? refEstimated;
+
+  // Applicera prisoverride genom att ersätta pvPrice och nolla essPrice på systemobjektet
+  // som calc() summerar (investment = pvPrice + essPrice).
+  const atmoceForCalc = useMemo(
+    () => ({ ...atmoce, pvPrice: atmocePriceEffective, essPrice: 0 }),
+    [atmoce, atmocePriceEffective],
+  );
+  const referenceForCalc = useMemo(
+    () => ({ ...reference, pvPrice: refPriceEffective, essPrice: 0 }),
+    [reference, refPriceEffective],
+  );
+
   const set = <K extends keyof CalcParams>(k: K) => (v: number) =>
     setParams((p) => ({ ...p, [k]: v }));
 
@@ -235,8 +257,8 @@ function Index() {
   );
 
   const atmoceWithBonus = useMemo(
-    () => ({ ...atmoce, productionBonus: panelBonusPct / 100 }),
-    [atmoce, panelBonusPct],
+    () => ({ ...atmoceForCalc, productionBonus: panelBonusPct / 100 }),
+    [atmoceForCalc, panelBonusPct],
   );
 
   const atmoceParams: CalcParams = {
@@ -252,8 +274,8 @@ function Index() {
   );
   const refParams: CalcParams = { ...params, inverterReplacements: refReplacements };
   const refResult = useMemo(
-    () => calculate(reference, refParams),
-    [reference, refParams],
+    () => calculate(referenceForCalc, refParams),
+    [referenceForCalc, refParams],
   );
 
   const chartData = useMemo(
@@ -360,6 +382,53 @@ function Index() {
       />
 
       <main className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
+        {/* Snabb-override: paneler + faktiska offertpriser */}
+        <Card className="mb-6 border-l-4 border-l-atmoce">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
+              {t("Dina siffror", "Your numbers")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <NumField
+              label={t("Antal solpaneler", "Number of solar panels")}
+              value={params.panels}
+              onChange={set("panels")}
+              editable
+              min={1}
+            />
+            <PriceField
+              label={t("Kostnad Atmoce (ink moms, efter GTA)", "Atmoce cost (incl. VAT, after GTA)")}
+              value={atmocePriceEffective}
+              estimated={atmoceEstimated}
+              isOverride={atmocePriceOverride !== null}
+              onChange={(n) => setAtmocePriceOverride(n)}
+            />
+            <PriceField
+              label={t("Kostnad annat system (ink GTA)", "Other system cost (incl. GTA)")}
+              value={refPriceEffective}
+              estimated={refEstimated}
+              isOverride={refPriceOverride !== null}
+              onChange={(n) => setRefPriceOverride(n)}
+            />
+            <div className="flex items-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setAtmocePriceOverride(null);
+                  setRefPriceOverride(null);
+                }}
+                disabled={atmocePriceOverride === null && refPriceOverride === null}
+              >
+                {t("Estimera kostnad", "Estimate cost")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
@@ -954,6 +1023,62 @@ function Index() {
           </section>
         </div>
       </main>
+    </div>
+  );
+}
+
+function PriceField({
+  label,
+  value,
+  estimated,
+  isOverride,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  estimated: number;
+  isOverride: boolean;
+  onChange: (n: number | null) => void;
+}) {
+  const [draft, setDraft] = useState<string>(String(Math.round(value)));
+  useEffect(() => {
+    setDraft(String(Math.round(value)));
+  }, [value]);
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <div className="relative">
+        <Input
+          type="number"
+          inputMode="numeric"
+          step={100}
+          min={0}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            const parsed = parseFloat(draft);
+            if (!Number.isFinite(parsed) || parsed < 0) {
+              setDraft(String(Math.round(value)));
+              return;
+            }
+            const rounded = Math.round(parsed);
+            if (rounded === Math.round(estimated)) {
+              onChange(null);
+            } else {
+              onChange(rounded);
+            }
+          }}
+          className="w-full min-w-0 pr-14 font-mono"
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          kr
+        </span>
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        {isOverride
+          ? `Estimat: ${fmtSek(estimated)}`
+          : "Använder modellens estimat"}
+      </div>
     </div>
   );
 }

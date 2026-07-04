@@ -2,6 +2,13 @@ import { LOCATIONS, MONTH_DAYS, MONTH_NAMES, type LocationData } from "@/data/lo
 
 export type SnowMeltMode = "none" | "optimized" | "full";
 
+/**
+ * Snöfallsdagar är typiskt molniga — den "återvinningsbara" produktionen om
+ * snön smälts bort motsvarar därför bara en bråkdel av den genomsnittliga
+ * dagsproduktionen för månaden (som antar klar himmel).
+ */
+export const SNOW_DAY_IRRADIANCE_FACTOR = 0.4;
+
 export interface SnowMeltParams {
   locationId: string;
   panels: number;
@@ -46,7 +53,8 @@ export function calculateSnowMelt(p: SnowMeltParams): SnowMeltResult {
     const monthProd = annualProduction * frac;
     const dayProd = monthProd / MONTH_DAYS[m];
     const snowDays = loc.monthlySnowDays[m];
-    const potentialKwh = snowDays * dayProd * p.coverageFactor;
+    const potentialKwh =
+      snowDays * dayProd * p.coverageFactor * SNOW_DAY_IRRADIANCE_FACTOR;
     const meltKwh = p.panels * meltKwhPerPanelDay * snowDays;
     const meltCost = meltKwh * p.buyPrice;
     const recoveredValue = potentialKwh * p.buyPrice;
