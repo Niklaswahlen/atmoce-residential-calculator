@@ -602,25 +602,10 @@ function Index() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("Referenssystem", "Reference system")}
+                  {t("Atmoce batteri", "Atmoce battery")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Select
-                  value={referenceId}
-                  onValueChange={(v) => setReferenceId(v as SystemId)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SYSTEM_ORDER.filter((id) => id !== "atmoce").map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {SYSTEMS[id].name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 {pricing && (
                   <div className="space-y-2 pt-1">
                     <NumField
@@ -635,6 +620,7 @@ function Index() {
                       editable
                       suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                     />
+                    {!isCustomRef && refKwhOverride === null && (
                     <div className="rounded-md bg-muted px-3 py-2 text-xs">
                       <div className="text-muted-foreground">
                         {t("Referenssystem matchas automatiskt", "Reference system matched automatically")}
@@ -644,6 +630,7 @@ function Index() {
                         <span className="font-semibold">{fmtNum(reference.batteryKwh, 2)} kWh</span>
                       </div>
                     </div>
+                    )}
                   </div>
                 )}
               </CardContent>
