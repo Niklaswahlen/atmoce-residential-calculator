@@ -158,7 +158,9 @@ function Index() {
   const t = useT();
   const isSimple = mode === "simple";
   const [params, setParams] = useState<CalcParams>(DEFAULT_PARAMS);
-  const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
+  const [refChoice, setRefChoice] = useState<SystemId | "custom">("solis_dyness");
+  const isCustomRef = refChoice === "custom";
+  const referenceId: SystemId = isCustomRef ? "solis_dyness" : refChoice;
   const [snowStateAdv, setSnowStateAdv] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
   // In simple mode snowmelt is always optimized.
   const snowState: SnowMeltState = isSimple
@@ -175,6 +177,13 @@ function Index() {
   // Prisöverride: null = använd modellens estimerade pris; annars fast pris (ink moms).
   const [atmocePriceOverride, setAtmocePriceOverride] = useState<number | null>(null);
   const [refPriceOverride, setRefPriceOverride] = useState<number | null>(null);
+  const [refKwhOverride, setRefKwhOverride] = useState<number | null>(null);
+  // Eget-system inputs
+  const [customBatteryKwh, setCustomBatteryKwh] = useState<number>(10);
+  const [customPrice, setCustomPrice] = useState<number>(100000);
+  const [customRoundTrip, setCustomRoundTrip] = useState<number>(90);
+  const [customInvWarranty, setCustomInvWarranty] = useState<number>(10);
+  const [customBatWarranty, setCustomBatWarranty] = useState<number>(10);
 
   const atmoceConfig = pricing?.systems.find((s) => s.id === "atmoce");
   const refConfig = pricing?.systems.find((s) => s.id === referenceId);
@@ -191,7 +200,14 @@ function Index() {
   const atmoceModulesDefault = atmoceConfig?.default_battery_modules ?? 2;
   const atmoceModules = atmoceModulesState ?? atmoceModulesDefault;
   const targetKwh = atmoceModules * atmoceUnitKwh;
-  const refModules = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
+  const refModulesAuto = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
+  const refKwhAuto = refModulesAuto * refUnitKwh;
+  const refKwhEffective = isCustomRef
+    ? customBatteryKwh
+    : (refKwhOverride ?? refKwhAuto);
+  const refModules = isCustomRef
+    ? refModulesAuto
+    : Math.max(1, Math.round(refKwhEffective / (refUnitKwh || 1)));
 
   const batteryModules: BatteryModulesMap = useMemo(
     () => ({ atmoce: atmoceModules, [referenceId]: refModules }),
@@ -215,15 +231,44 @@ function Index() {
   );
 
   const atmoce = systems.atmoce;
-  const reference = systems[referenceId];
+  const referenceFromModel = systems[referenceId];
+  const referenceBase = useMemo(() => {
+    if (!isCustomRef) return referenceFromModel;
+    return {
+      ...referenceFromModel,
+      id: referenceId, // keep a valid SystemId to satisfy typing
+      name: t("Eget system", "Own system"),
+      short: t("Eget", "Own"),
+      pvPrice: customPrice,
+      essPrice: 0,
+      batteryKwh: customBatteryKwh,
+      batteryRoundTrip: Math.max(0, Math.min(1, customRoundTrip / 100)),
+      productionBonus: 0,
+      inverterWarrantyYears: customInvWarranty,
+      batteryWarrantyYears: customBatWarranty,
+      batteryWarrantyCycles: undefined,
+      inverterType: "—",
+      panelLevelMonitoring: false,
+    };
+  }, [isCustomRef, referenceFromModel, referenceId, customPrice, customBatteryKwh, customRoundTrip, customInvWarranty, customBatWarranty, t]);
 
   // Modellens estimerade totalpris (pv + ess, ink moms efter GTA).
   const atmoceEstimated = atmoce.pvPrice + atmoce.essPrice;
-  const refEstimated = reference.pvPrice + reference.essPrice;
+  const refEstimated = isCustomRef
+    ? customPrice
+    : referenceFromModel.pvPrice + referenceFromModel.essPrice;
 
   // Effektiv pris som används i kalkylen (override eller estimat).
   const atmocePriceEffective = atmocePriceOverride ?? atmoceEstimated;
-  const refPriceEffective = refPriceOverride ?? refEstimated;
+  const refPriceEffective = isCustomRef
+    ? customPrice
+    : (refPriceOverride ?? refEstimated);
+
+  // Apply battery kWh override to the reference object used downstream.
+  const reference = useMemo(
+    () => ({ ...referenceBase, batteryKwh: refKwhEffective }),
+    [referenceBase, refKwhEffective],
+  );
 
   // Applicera prisoverride genom att ersätta pvPrice och nolla essPrice på systemobjektet
   // som calc() summerar (investment = pvPrice + essPrice).
@@ -389,43 +434,132 @@ function Index() {
               {t("Dina siffror", "Your numbers")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <NumField
-              label={t("Antal solpaneler", "Number of solar panels")}
-              value={params.panels}
-              onChange={set("panels")}
-              editable
-              min={1}
-            />
-            <PriceField
-              label={t("Kostnad Atmoce (ink moms, efter GTA)", "Atmoce cost (incl. VAT, after GTA)")}
-              value={atmocePriceEffective}
-              estimated={atmoceEstimated}
-              isOverride={atmocePriceOverride !== null}
-              onChange={(n) => setAtmocePriceOverride(n)}
-            />
-            <PriceField
-              label={t("Kostnad annat system (ink GTA)", "Other system cost (incl. GTA)")}
-              value={refPriceEffective}
-              estimated={refEstimated}
-              isOverride={refPriceOverride !== null}
-              onChange={(n) => setRefPriceOverride(n)}
-            />
-            <div className="flex items-end">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  setAtmocePriceOverride(null);
-                  setRefPriceOverride(null);
-                }}
-                disabled={atmocePriceOverride === null && refPriceOverride === null}
-              >
-                {t("Estimera kostnad", "Estimate cost")}
-              </Button>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
+              <NumField
+                label={t("Antal solpaneler", "Number of solar panels")}
+                value={params.panels}
+                onChange={set("panels")}
+                editable
+                min={1}
+              />
+              <PriceField
+                label={t("Kostnad Atmoce (ink moms, efter GTA)", "Atmoce cost (incl. VAT, after GTA)")}
+                value={atmocePriceEffective}
+                estimated={atmoceEstimated}
+                isOverride={atmocePriceOverride !== null}
+                onChange={(n) => setAtmocePriceOverride(n)}
+              />
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    setAtmocePriceOverride(null);
+                    setRefPriceOverride(null);
+                    setRefKwhOverride(null);
+                  }}
+                  disabled={
+                    atmocePriceOverride === null &&
+                    refPriceOverride === null &&
+                    refKwhOverride === null
+                  }
+                >
+                  {t("Estimera kostnad", "Estimate cost")}
+                </Button>
+              </div>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="min-w-0 space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("Annat system (referens)", "Other system (reference)")}
+                </Label>
+                <Select
+                  value={refChoice}
+                  onValueChange={(v) => {
+                    setRefChoice(v as SystemId | "custom");
+                    setRefPriceOverride(null);
+                    setRefKwhOverride(null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SYSTEM_ORDER.filter((id) => id !== "atmoce").map((id) => (
+                      <SelectItem key={id} value={id}>
+                        {SYSTEMS[id].name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom">
+                      {t("Eget system…", "Own system…")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <KwhField
+                label={t("Batterikapacitet (kWh)", "Battery capacity (kWh)")}
+                value={refKwhEffective}
+                estimated={isCustomRef ? null : refKwhAuto}
+                isOverride={!isCustomRef && refKwhOverride !== null}
+                onChange={(n) => {
+                  if (isCustomRef) {
+                    if (n !== null) setCustomBatteryKwh(n);
+                  } else {
+                    setRefKwhOverride(n);
+                  }
+                }}
+              />
+              <PriceField
+                label={t("Kostnad annat system (ink GTA)", "Other system cost (incl. GTA)")}
+                value={refPriceEffective}
+                estimated={refEstimated}
+                isOverride={isCustomRef ? true : refPriceOverride !== null}
+                hideEstimate={isCustomRef}
+                onChange={(n) => {
+                  if (isCustomRef) {
+                    if (n !== null) setCustomPrice(n);
+                  } else {
+                    setRefPriceOverride(n);
+                  }
+                }}
+              />
+            </div>
+
+            {isCustomRef && (
+              <div className="grid gap-3 rounded-md border border-dashed bg-muted/30 p-3 sm:grid-cols-3">
+                <NumField
+                  label={t("Round-trip effektivitet", "Round-trip efficiency")}
+                  value={customRoundTrip}
+                  onChange={(v) => setCustomRoundTrip(Math.max(1, Math.min(100, v)))}
+                  suffix="%"
+                  step={1}
+                  editable
+                  min={1}
+                />
+                <NumField
+                  label={t("Garanti växelriktare", "Inverter warranty")}
+                  value={customInvWarranty}
+                  onChange={(v) => setCustomInvWarranty(Math.max(0, v))}
+                  suffix={t("år", "yrs")}
+                  step={1}
+                  editable
+                  min={0}
+                />
+                <NumField
+                  label={t("Garanti batteri", "Battery warranty")}
+                  value={customBatWarranty}
+                  onChange={(v) => setCustomBatWarranty(Math.max(0, v))}
+                  suffix={t("år", "yrs")}
+                  step={1}
+                  editable
+                  min={0}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -557,25 +691,10 @@ function Index() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("Referenssystem", "Reference system")}
+                  {t("Atmoce batteri", "Atmoce battery")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Select
-                  value={referenceId}
-                  onValueChange={(v) => setReferenceId(v as SystemId)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SYSTEM_ORDER.filter((id) => id !== "atmoce").map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {SYSTEMS[id].name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 {pricing && (
                   <div className="space-y-2 pt-1">
                     <NumField
@@ -590,6 +709,7 @@ function Index() {
                       editable
                       suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                     />
+                    {!isCustomRef && refKwhOverride === null && (
                     <div className="rounded-md bg-muted px-3 py-2 text-xs">
                       <div className="text-muted-foreground">
                         {t("Referenssystem matchas automatiskt", "Reference system matched automatically")}
@@ -599,6 +719,7 @@ function Index() {
                         <span className="font-semibold">{fmtNum(reference.batteryKwh, 2)} kWh</span>
                       </div>
                     </div>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -1032,12 +1153,14 @@ function PriceField({
   value,
   estimated,
   isOverride,
+  hideEstimate,
   onChange,
 }: {
   label: string;
   value: number;
   estimated: number;
   isOverride: boolean;
+  hideEstimate?: boolean;
   onChange: (n: number | null) => void;
 }) {
   const [draft, setDraft] = useState<string>(String(Math.round(value)));
@@ -1075,9 +1198,69 @@ function PriceField({
         </span>
       </div>
       <div className="text-[11px] text-muted-foreground">
-        {isOverride
+        {hideEstimate
+          ? "\u00A0"
+          : isOverride
           ? `Estimat: ${fmtSek(estimated)}`
           : "Använder modellens estimat"}
+      </div>
+    </div>
+  );
+}
+
+function KwhField({
+  label,
+  value,
+  estimated,
+  isOverride,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  estimated: number | null;
+  isOverride: boolean;
+  onChange: (n: number | null) => void;
+}) {
+  const [draft, setDraft] = useState<string>(String(Math.round((value ?? 0) * 100) / 100));
+  useEffect(() => {
+    setDraft(String(Math.round((value ?? 0) * 100) / 100));
+  }, [value]);
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <div className="relative">
+        <Input
+          type="number"
+          inputMode="decimal"
+          step={0.1}
+          min={0}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            const parsed = parseFloat(draft);
+            if (!Number.isFinite(parsed) || parsed < 0) {
+              setDraft(String(Math.round((value ?? 0) * 100) / 100));
+              return;
+            }
+            const rounded = Math.round(parsed * 100) / 100;
+            if (estimated !== null && Math.abs(rounded - estimated) < 0.005) {
+              onChange(null);
+            } else {
+              onChange(rounded);
+            }
+          }}
+          className="w-full min-w-0 pr-14 font-mono"
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          kWh
+        </span>
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        {estimated === null
+          ? "\u00A0"
+          : isOverride
+            ? `Auto: ${fmtNum(estimated, 2)} kWh`
+            : "Auto (matchas till Atmoce)"}
       </div>
     </div>
   );
