@@ -158,7 +158,9 @@ function Index() {
   const t = useT();
   const isSimple = mode === "simple";
   const [params, setParams] = useState<CalcParams>(DEFAULT_PARAMS);
-  const [referenceId, setReferenceId] = useState<SystemId>("solis_dyness");
+  const [refChoice, setRefChoice] = useState<SystemId | "custom">("solis_dyness");
+  const isCustomRef = refChoice === "custom";
+  const referenceId: SystemId = isCustomRef ? "solis_dyness" : refChoice;
   const [snowStateAdv, setSnowStateAdv] = useState<SnowMeltState>(DEFAULT_SNOWMELT_STATE);
   // In simple mode snowmelt is always optimized.
   const snowState: SnowMeltState = isSimple
@@ -175,6 +177,13 @@ function Index() {
   // Prisöverride: null = använd modellens estimerade pris; annars fast pris (ink moms).
   const [atmocePriceOverride, setAtmocePriceOverride] = useState<number | null>(null);
   const [refPriceOverride, setRefPriceOverride] = useState<number | null>(null);
+  const [refKwhOverride, setRefKwhOverride] = useState<number | null>(null);
+  // Eget-system inputs
+  const [customBatteryKwh, setCustomBatteryKwh] = useState<number>(10);
+  const [customPrice, setCustomPrice] = useState<number>(100000);
+  const [customRoundTrip, setCustomRoundTrip] = useState<number>(90);
+  const [customInvWarranty, setCustomInvWarranty] = useState<number>(10);
+  const [customBatWarranty, setCustomBatWarranty] = useState<number>(10);
 
   const atmoceConfig = pricing?.systems.find((s) => s.id === "atmoce");
   const refConfig = pricing?.systems.find((s) => s.id === referenceId);
@@ -191,7 +200,14 @@ function Index() {
   const atmoceModulesDefault = atmoceConfig?.default_battery_modules ?? 2;
   const atmoceModules = atmoceModulesState ?? atmoceModulesDefault;
   const targetKwh = atmoceModules * atmoceUnitKwh;
-  const refModules = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
+  const refModulesAuto = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
+  const refKwhAuto = refModulesAuto * refUnitKwh;
+  const refKwhEffective = isCustomRef
+    ? customBatteryKwh
+    : (refKwhOverride ?? refKwhAuto);
+  const refModules = isCustomRef
+    ? refModulesAuto
+    : Math.max(1, Math.round(refKwhEffective / (refUnitKwh || 1)));
 
   const batteryModules: BatteryModulesMap = useMemo(
     () => ({ atmoce: atmoceModules, [referenceId]: refModules }),
@@ -215,15 +231,44 @@ function Index() {
   );
 
   const atmoce = systems.atmoce;
-  const reference = systems[referenceId];
+  const referenceFromModel = systems[referenceId];
+  const reference = useMemo(() => {
+    if (!isCustomRef) return referenceFromModel;
+    return {
+      ...referenceFromModel,
+      id: referenceId, // keep a valid SystemId to satisfy typing
+      name: t("Eget system", "Own system"),
+      short: t("Eget", "Own"),
+      pvPrice: customPrice,
+      essPrice: 0,
+      batteryKwh: customBatteryKwh,
+      batteryRoundTrip: Math.max(0, Math.min(1, customRoundTrip / 100)),
+      productionBonus: 0,
+      inverterWarrantyYears: customInvWarranty,
+      batteryWarrantyYears: customBatWarranty,
+      batteryWarrantyCycles: undefined,
+      inverterType: "—",
+      panelLevelMonitoring: false,
+    };
+  }, [isCustomRef, referenceFromModel, referenceId, customPrice, customBatteryKwh, customRoundTrip, customInvWarranty, customBatWarranty, t]);
 
   // Modellens estimerade totalpris (pv + ess, ink moms efter GTA).
   const atmoceEstimated = atmoce.pvPrice + atmoce.essPrice;
-  const refEstimated = reference.pvPrice + reference.essPrice;
+  const refEstimated = isCustomRef
+    ? customPrice
+    : referenceFromModel.pvPrice + referenceFromModel.essPrice;
 
   // Effektiv pris som används i kalkylen (override eller estimat).
   const atmocePriceEffective = atmocePriceOverride ?? atmoceEstimated;
-  const refPriceEffective = refPriceOverride ?? refEstimated;
+  const refPriceEffective = isCustomRef
+    ? customPrice
+    : (refPriceOverride ?? refEstimated);
+
+  // Apply battery kWh override to the reference object used downstream.
+  const referenceWithKwh = useMemo(
+    () => ({ ...reference, batteryKwh: refKwhEffective }),
+    [reference, refKwhEffective],
+  );
 
   // Applicera prisoverride genom att ersätta pvPrice och nolla essPrice på systemobjektet
   // som calc() summerar (investment = pvPrice + essPrice).
@@ -232,8 +277,8 @@ function Index() {
     [atmoce, atmocePriceEffective],
   );
   const referenceForCalc = useMemo(
-    () => ({ ...reference, pvPrice: refPriceEffective, essPrice: 0 }),
-    [reference, refPriceEffective],
+    () => ({ ...referenceWithKwh, pvPrice: refPriceEffective, essPrice: 0 }),
+    [referenceWithKwh, refPriceEffective],
   );
 
   const set = <K extends keyof CalcParams>(k: K) => (v: number) =>
