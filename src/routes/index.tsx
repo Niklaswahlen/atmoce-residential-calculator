@@ -382,6 +382,53 @@ function Index() {
       />
 
       <main className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
+        {/* Snabb-override: paneler + faktiska offertpriser */}
+        <Card className="mb-6 border-l-4 border-l-atmoce">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
+              {t("Dina siffror", "Your numbers")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <NumField
+              label={t("Antal solpaneler", "Number of solar panels")}
+              value={params.panels}
+              onChange={set("panels")}
+              editable
+              min={1}
+            />
+            <PriceField
+              label={t("Kostnad Atmoce (ink moms, efter GTA)", "Atmoce cost (incl. VAT, after GTA)")}
+              value={atmocePriceEffective}
+              estimated={atmoceEstimated}
+              isOverride={atmocePriceOverride !== null}
+              onChange={(n) => setAtmocePriceOverride(n)}
+            />
+            <PriceField
+              label={t("Kostnad annat system (ink GTA)", "Other system cost (incl. GTA)")}
+              value={refPriceEffective}
+              estimated={refEstimated}
+              isOverride={refPriceOverride !== null}
+              onChange={(n) => setRefPriceOverride(n)}
+            />
+            <div className="flex items-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setAtmocePriceOverride(null);
+                  setRefPriceOverride(null);
+                }}
+                disabled={atmocePriceOverride === null && refPriceOverride === null}
+              >
+                {t("Estimera kostnad", "Estimate cost")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
