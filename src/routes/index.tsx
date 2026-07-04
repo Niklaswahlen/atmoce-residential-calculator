@@ -232,7 +232,7 @@ function Index() {
 
   const atmoce = systems.atmoce;
   const referenceFromModel = systems[referenceId];
-  const reference = useMemo(() => {
+  const referenceBase = useMemo(() => {
     if (!isCustomRef) return referenceFromModel;
     return {
       ...referenceFromModel,
@@ -265,9 +265,9 @@ function Index() {
     : (refPriceOverride ?? refEstimated);
 
   // Apply battery kWh override to the reference object used downstream.
-  const referenceWithKwh = useMemo(
-    () => ({ ...reference, batteryKwh: refKwhEffective }),
-    [reference, refKwhEffective],
+  const reference = useMemo(
+    () => ({ ...referenceBase, batteryKwh: refKwhEffective }),
+    [referenceBase, refKwhEffective],
   );
 
   // Applicera prisoverride genom att ersätta pvPrice och nolla essPrice på systemobjektet
@@ -277,8 +277,8 @@ function Index() {
     [atmoce, atmocePriceEffective],
   );
   const referenceForCalc = useMemo(
-    () => ({ ...referenceWithKwh, pvPrice: refPriceEffective, essPrice: 0 }),
-    [referenceWithKwh, refPriceEffective],
+    () => ({ ...reference, pvPrice: refPriceEffective, essPrice: 0 }),
+    [reference, refPriceEffective],
   );
 
   const set = <K extends keyof CalcParams>(k: K) => (v: number) =>
