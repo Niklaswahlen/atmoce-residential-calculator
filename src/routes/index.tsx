@@ -86,6 +86,23 @@ const DEFAULT_PARAMS: CalcParams = {
   degradation: 0.005,
 };
 
+// Format a number with thin space thousand separators when >= 1000.
+function formatWithSpaces(n: number, decimals = 0): string {
+  if (!Number.isFinite(n)) return "";
+  const abs = Math.abs(n);
+  const d = decimals;
+  if (abs < 1000) {
+    return d > 0 ? String(Math.round(n * 10 ** d) / 10 ** d) : String(n);
+  }
+  return n
+    .toLocaleString("sv-SE", { maximumFractionDigits: d, minimumFractionDigits: 0 })
+    .replace(/\u00a0/g, " ");
+}
+
+function parseSpaced(s: string): number {
+  return parseFloat(s.replace(/\s+/g, "").replace(",", "."));
+}
+
 function NumField({
   label,
   value,
@@ -103,46 +120,42 @@ function NumField({
   min?: number;
   editable?: boolean;
 }) {
-  const [draft, setDraft] = useState<string>(String(value));
+  const decimals = step < 1 ? 2 : 0;
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState<string>(formatWithSpaces(value, decimals));
   useEffect(() => {
-    if (!editable) return;
-    setDraft(String(value));
-  }, [value, editable]);
+    if (focused) return;
+    setDraft(formatWithSpaces(value, decimals));
+  }, [value, focused, decimals]);
+  const commit = () => {
+    setFocused(false);
+    const parsed = parseSpaced(draft);
+    if (!Number.isFinite(parsed)) {
+      setDraft(formatWithSpaces(value, decimals));
+      return;
+    }
+    let out = parsed;
+    if (editable) out = Math.round(out);
+    if (min !== undefined) out = Math.max(min, out);
+    onChange(out);
+    setDraft(formatWithSpaces(out, decimals));
+  };
   return (
     <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
-        {editable ? (
-          <Input
-            type="number"
-            inputMode="numeric"
-            step={step}
-            min={min}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => {
-              const parsed = parseFloat(draft);
-              if (!Number.isFinite(parsed)) {
-                setDraft(String(value));
-                return;
-              }
-              const clamped = Math.max(min ?? -Infinity, Math.round(parsed));
-              onChange(clamped);
-              setDraft(String(clamped));
-            }}
-            className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
-          />
-        ) : (
-          <Input
-            type="number"
-            inputMode="decimal"
-            step={step}
-            min={min}
-            value={Number.isFinite(value) ? value : ""}
-            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-            className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
-          />
-        )}
+        <Input
+          type="text"
+          inputMode={decimals > 0 ? "decimal" : "numeric"}
+          value={draft}
+          onFocus={() => {
+            setFocused(true);
+            setDraft(String(value));
+          }}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
+        />
         {suffix && (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
             {suffix}
