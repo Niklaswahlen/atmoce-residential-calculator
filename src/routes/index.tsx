@@ -657,33 +657,6 @@ function Index() {
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("Anläggning", "System size")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-3">
-                <NumField
-                  label={t("Antal paneler", "Number of panels")}
-                  value={params.panels}
-                  onChange={set("panels")}
-                />
-                <NumField
-                  label={t("Wp/panel", "Wp/panel")}
-                  value={params.wpPerPanel}
-                  onChange={set("wpPerPanel")}
-                  suffix="W"
-                />
-                <div className="col-span-2 rounded-md bg-muted px-3 py-2 text-sm">
-                  <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
-                  <span className="font-mono font-semibold">
-                    {fmtNum(kWp, 2)} kWp
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
             {!isSimple && (
             <Card>
               <CardHeader className="pb-3">
@@ -778,43 +751,6 @@ function Index() {
               </CardContent>
             </Card>
             )}
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("Atmoce batteri", "Atmoce battery")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {pricing && (
-                  <div className="space-y-2 pt-1">
-                    <NumField
-                      label={t(
-                        `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
-                        `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
-                      )}
-                      value={atmoceModules}
-                      onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
-                      step={1}
-                      min={1}
-                      editable
-                      suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
-                    />
-                    {!isCustomRef && refKwhOverride === null && (
-                    <div className="rounded-md bg-muted px-3 py-2 text-xs">
-                      <div className="text-muted-foreground">
-                        {t("Referenssystem matchas automatiskt", "Reference system matched automatically")}
-                      </div>
-                      <div className="font-mono">
-                        {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
-                        <span className="font-semibold">{fmtNum(reference.batteryKwh, 2)} kWh</span>
-                      </div>
-                    </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </aside>
 
           {/* Results */}
