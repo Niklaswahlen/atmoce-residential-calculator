@@ -86,6 +86,23 @@ const DEFAULT_PARAMS: CalcParams = {
   degradation: 0.005,
 };
 
+// Format a number with thin space thousand separators when >= 1000.
+function formatWithSpaces(n: number, decimals = 0): string {
+  if (!Number.isFinite(n)) return "";
+  const abs = Math.abs(n);
+  const d = decimals;
+  if (abs < 1000) {
+    return d > 0 ? String(Math.round(n * 10 ** d) / 10 ** d) : String(n);
+  }
+  return n
+    .toLocaleString("sv-SE", { maximumFractionDigits: d, minimumFractionDigits: 0 })
+    .replace(/\u00a0/g, " ");
+}
+
+function parseSpaced(s: string): number {
+  return parseFloat(s.replace(/\s+/g, "").replace(",", "."));
+}
+
 function NumField({
   label,
   value,
@@ -103,46 +120,42 @@ function NumField({
   min?: number;
   editable?: boolean;
 }) {
-  const [draft, setDraft] = useState<string>(String(value));
+  const decimals = step < 1 ? 2 : 0;
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState<string>(formatWithSpaces(value, decimals));
   useEffect(() => {
-    if (!editable) return;
-    setDraft(String(value));
-  }, [value, editable]);
+    if (focused) return;
+    setDraft(formatWithSpaces(value, decimals));
+  }, [value, focused, decimals]);
+  const commit = () => {
+    setFocused(false);
+    const parsed = parseSpaced(draft);
+    if (!Number.isFinite(parsed)) {
+      setDraft(formatWithSpaces(value, decimals));
+      return;
+    }
+    let out = parsed;
+    if (editable) out = Math.round(out);
+    if (min !== undefined) out = Math.max(min, out);
+    onChange(out);
+    setDraft(formatWithSpaces(out, decimals));
+  };
   return (
     <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
-        {editable ? (
-          <Input
-            type="number"
-            inputMode="numeric"
-            step={step}
-            min={min}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => {
-              const parsed = parseFloat(draft);
-              if (!Number.isFinite(parsed)) {
-                setDraft(String(value));
-                return;
-              }
-              const clamped = Math.max(min ?? -Infinity, Math.round(parsed));
-              onChange(clamped);
-              setDraft(String(clamped));
-            }}
-            className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
-          />
-        ) : (
-          <Input
-            type="number"
-            inputMode="decimal"
-            step={step}
-            min={min}
-            value={Number.isFinite(value) ? value : ""}
-            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-            className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
-          />
-        )}
+        <Input
+          type="text"
+          inputMode={decimals > 0 ? "decimal" : "numeric"}
+          value={draft}
+          onFocus={() => {
+            setFocused(true);
+            setDraft(String(value));
+          }}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
+        />
         {suffix && (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
             {suffix}
@@ -208,6 +221,17 @@ function Index() {
   const refModules = isCustomRef
     ? refModulesAuto
     : Math.max(1, Math.round(refKwhEffective / (refUnitKwh || 1)));
+
+  // Auto-match Atmoce battery modules to the reference system's total kWh
+  // whenever the user changes the reference side (dropdown, module count,
+  // or custom-system kWh). When the reference is auto-following Atmoce
+  // (no override, not custom), skip to avoid update loops.
+  const refKwhForMatch = isCustomRef ? customBatteryKwh : (refKwhOverride ?? null);
+  useEffect(() => {
+    if (refKwhForMatch === null) return;
+    const matched = Math.max(1, Math.round(refKwhForMatch / (atmoceUnitKwh || 1)));
+    setAtmoceModulesState((prev) => (prev === matched ? prev : matched));
+  }, [refKwhForMatch, atmoceUnitKwh]);
 
   const batteryModules: BatteryModulesMap = useMemo(
     () => ({ atmoce: atmoceModules, [referenceId]: refModules }),
@@ -434,28 +458,184 @@ function Index() {
               {t("Dina siffror", "Your numbers")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
-              <NumField
-                label={t("Antal solpaneler", "Number of solar panels")}
-                value={params.panels}
-                onChange={set("panels")}
-                editable
-                min={1}
-              />
-              <PriceField
-                label={t("Kostnad Atmoce (ink moms, efter GTA)", "Atmoce cost (incl. VAT, after GTA)")}
-                value={atmocePriceEffective}
-                estimated={atmoceEstimated}
-                isOverride={atmocePriceOverride !== null}
-                onChange={(n) => setAtmocePriceOverride(n)}
-              />
-              <div className="flex items-end">
+          <CardContent>
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Kolumn 1: Anläggning + Atmoce batteri */}
+              <div className="space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <NumField
+                    label={t("Antal solpaneler", "Number of solar panels")}
+                    value={params.panels}
+                    onChange={set("panels")}
+                    editable
+                    min={1}
+                  />
+                  <NumField
+                    label={t("Wp/panel", "Wp/panel")}
+                    value={params.wpPerPanel}
+                    onChange={set("wpPerPanel")}
+                    editable
+                    min={1}
+                    suffix="W"
+                  />
+                </div>
+                <div className="rounded-md bg-muted px-3 py-2 text-xs">
+                  <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
+                  <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
+                </div>
+                {pricing && (
+                  <NumField
+                    label={t(
+                      `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
+                      `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
+                    )}
+                    value={atmoceModules}
+                    onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
+                    editable
+                    min={1}
+                    suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
+                  />
+                )}
+                <div className="rounded-md bg-muted px-3 py-2 text-xs font-mono">
+                  Atmoce <b>{fmtNum(atmoce.batteryKwh, 1)} kWh</b>{" "}
+                  <span className="text-muted-foreground">↔</span>{" "}
+                  {reference.short} <b>{fmtNum(reference.batteryKwh, 1)} kWh</b>
+                </div>
+              </div>
+
+              {/* Kolumn 2: Annat system */}
+              <div className="space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("Annat system (referens)", "Other system (reference)")}
+                </div>
+                <div className="min-w-0 space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t("Välj system", "Select system")}
+                  </Label>
+                  <Select
+                    value={refChoice}
+                    onValueChange={(v) => {
+                      setRefChoice(v as SystemId | "custom");
+                      setRefPriceOverride(null);
+                      setRefKwhOverride(null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SYSTEM_ORDER.filter((id) => id !== "atmoce").map((id) => (
+                        <SelectItem key={id} value={id}>
+                          {SYSTEMS[id].name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">
+                        {t("Eget system…", "Own system…")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {isCustomRef ? (
+                  <div className="grid gap-3 rounded-md border border-dashed bg-muted/30 p-3 sm:grid-cols-2">
+                    <NumField
+                      label={t("Batterikapacitet", "Battery capacity")}
+                      value={customBatteryKwh}
+                      onChange={(v) => setCustomBatteryKwh(Math.max(1, v))}
+                      editable
+                      min={1}
+                      suffix="kWh"
+                    />
+                    <NumField
+                      label={t("Round-trip effektivitet", "Round-trip efficiency")}
+                      value={customRoundTrip}
+                      onChange={(v) => setCustomRoundTrip(Math.max(1, Math.min(100, v)))}
+                      suffix="%"
+                      editable
+                      min={1}
+                    />
+                    <NumField
+                      label={t("Garanti växelriktare", "Inverter warranty")}
+                      value={customInvWarranty}
+                      onChange={(v) => setCustomInvWarranty(Math.max(0, v))}
+                      suffix={t("år", "yrs")}
+                      editable
+                      min={0}
+                    />
+                    <NumField
+                      label={t("Garanti batteri", "Battery warranty")}
+                      value={customBatWarranty}
+                      onChange={(v) => setCustomBatWarranty(Math.max(0, v))}
+                      suffix={t("år", "yrs")}
+                      editable
+                      min={0}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <NumField
+                      label={t(
+                        `Batterimoduler (à ${fmtNum(refUnitKwh, 2)} kWh)`,
+                        `Battery modules (each ${fmtNum(refUnitKwh, 2)} kWh)`,
+                      )}
+                      value={refModules}
+                      onChange={(v) => {
+                        const m = Math.max(1, Math.round(v));
+                        setRefKwhOverride(m * refUnitKwh);
+                      }}
+                      editable
+                      min={1}
+                      suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
+                    />
+                    <div className="rounded-md bg-muted px-3 py-2 text-xs font-mono">
+                      {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
+                      <span className="font-semibold">
+                        {fmtNum(reference.batteryKwh, 2)} kWh
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Kolumn 3: Priser */}
+              <div className="space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("Priser", "Prices")}
+                </div>
+                <PriceField
+                  label={t(
+                    "Kostnad Atmoce (ink moms, efter GTA)",
+                    "Atmoce cost (incl. VAT, after GTA)",
+                  )}
+                  value={atmocePriceEffective}
+                  estimated={atmoceEstimated}
+                  isOverride={atmocePriceOverride !== null}
+                  onChange={(n) => setAtmocePriceOverride(n)}
+                />
+                <PriceField
+                  label={t(
+                    "Kostnad annat system (ink GTA)",
+                    "Other system cost (incl. GTA)",
+                  )}
+                  value={refPriceEffective}
+                  estimated={refEstimated}
+                  isOverride={isCustomRef ? true : refPriceOverride !== null}
+                  hideEstimate={isCustomRef}
+                  onChange={(n) => {
+                    if (isCustomRef) {
+                      if (n !== null) setCustomPrice(n);
+                    } else {
+                      setRefPriceOverride(n);
+                    }
+                  }}
+                />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="w-full sm:w-auto"
+                  className="w-full"
                   onClick={() => {
                     setAtmocePriceOverride(null);
                     setRefPriceOverride(null);
@@ -471,128 +651,12 @@ function Index() {
                 </Button>
               </div>
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="min-w-0 space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  {t("Annat system (referens)", "Other system (reference)")}
-                </Label>
-                <Select
-                  value={refChoice}
-                  onValueChange={(v) => {
-                    setRefChoice(v as SystemId | "custom");
-                    setRefPriceOverride(null);
-                    setRefKwhOverride(null);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SYSTEM_ORDER.filter((id) => id !== "atmoce").map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {SYSTEMS[id].name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="custom">
-                      {t("Eget system…", "Own system…")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <KwhField
-                label={t("Batterikapacitet (kWh)", "Battery capacity (kWh)")}
-                value={refKwhEffective}
-                estimated={isCustomRef ? null : refKwhAuto}
-                isOverride={!isCustomRef && refKwhOverride !== null}
-                onChange={(n) => {
-                  if (isCustomRef) {
-                    if (n !== null) setCustomBatteryKwh(n);
-                  } else {
-                    setRefKwhOverride(n);
-                  }
-                }}
-              />
-              <PriceField
-                label={t("Kostnad annat system (ink GTA)", "Other system cost (incl. GTA)")}
-                value={refPriceEffective}
-                estimated={refEstimated}
-                isOverride={isCustomRef ? true : refPriceOverride !== null}
-                hideEstimate={isCustomRef}
-                onChange={(n) => {
-                  if (isCustomRef) {
-                    if (n !== null) setCustomPrice(n);
-                  } else {
-                    setRefPriceOverride(n);
-                  }
-                }}
-              />
-            </div>
-
-            {isCustomRef && (
-              <div className="grid gap-3 rounded-md border border-dashed bg-muted/30 p-3 sm:grid-cols-3">
-                <NumField
-                  label={t("Round-trip effektivitet", "Round-trip efficiency")}
-                  value={customRoundTrip}
-                  onChange={(v) => setCustomRoundTrip(Math.max(1, Math.min(100, v)))}
-                  suffix="%"
-                  step={1}
-                  editable
-                  min={1}
-                />
-                <NumField
-                  label={t("Garanti växelriktare", "Inverter warranty")}
-                  value={customInvWarranty}
-                  onChange={(v) => setCustomInvWarranty(Math.max(0, v))}
-                  suffix={t("år", "yrs")}
-                  step={1}
-                  editable
-                  min={0}
-                />
-                <NumField
-                  label={t("Garanti batteri", "Battery warranty")}
-                  value={customBatWarranty}
-                  onChange={(v) => setCustomBatWarranty(Math.max(0, v))}
-                  suffix={t("år", "yrs")}
-                  step={1}
-                  editable
-                  min={0}
-                />
-              </div>
-            )}
           </CardContent>
         </Card>
 
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("Anläggning", "System size")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-3">
-                <NumField
-                  label={t("Antal paneler", "Number of panels")}
-                  value={params.panels}
-                  onChange={set("panels")}
-                />
-                <NumField
-                  label={t("Wp/panel", "Wp/panel")}
-                  value={params.wpPerPanel}
-                  onChange={set("wpPerPanel")}
-                  suffix="W"
-                />
-                <div className="col-span-2 rounded-md bg-muted px-3 py-2 text-sm">
-                  <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
-                  <span className="font-mono font-semibold">
-                    {fmtNum(kWp, 2)} kWp
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
             {!isSimple && (
             <Card>
               <CardHeader className="pb-3">
@@ -687,43 +751,6 @@ function Index() {
               </CardContent>
             </Card>
             )}
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("Atmoce batteri", "Atmoce battery")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {pricing && (
-                  <div className="space-y-2 pt-1">
-                    <NumField
-                      label={t(
-                        `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
-                        `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
-                      )}
-                      value={atmoceModules}
-                      onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
-                      step={1}
-                      min={1}
-                      editable
-                      suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
-                    />
-                    {!isCustomRef && refKwhOverride === null && (
-                    <div className="rounded-md bg-muted px-3 py-2 text-xs">
-                      <div className="text-muted-foreground">
-                        {t("Referenssystem matchas automatiskt", "Reference system matched automatically")}
-                      </div>
-                      <div className="font-mono">
-                        {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
-                        <span className="font-semibold">{fmtNum(reference.batteryKwh, 2)} kWh</span>
-                      </div>
-                    </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </aside>
 
           {/* Results */}
@@ -1163,25 +1190,30 @@ function PriceField({
   hideEstimate?: boolean;
   onChange: (n: number | null) => void;
 }) {
-  const [draft, setDraft] = useState<string>(String(Math.round(value)));
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState<string>(formatWithSpaces(Math.round(value)));
   useEffect(() => {
-    setDraft(String(Math.round(value)));
-  }, [value]);
+    if (focused) return;
+    setDraft(formatWithSpaces(Math.round(value)));
+  }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
-          type="number"
+          type="text"
           inputMode="numeric"
-          step={100}
-          min={0}
           value={draft}
+          onFocus={() => {
+            setFocused(true);
+            setDraft(String(Math.round(value)));
+          }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => {
-            const parsed = parseFloat(draft);
+            setFocused(false);
+            const parsed = parseSpaced(draft);
             if (!Number.isFinite(parsed) || parsed < 0) {
-              setDraft(String(Math.round(value)));
+              setDraft(formatWithSpaces(Math.round(value)));
               return;
             }
             const rounded = Math.round(parsed);
@@ -1190,6 +1222,7 @@ function PriceField({
             } else {
               onChange(rounded);
             }
+            setDraft(formatWithSpaces(rounded));
           }}
           className="w-full min-w-0 pr-14 font-mono"
         />
@@ -1221,25 +1254,32 @@ function KwhField({
   isOverride: boolean;
   onChange: (n: number | null) => void;
 }) {
-  const [draft, setDraft] = useState<string>(String(Math.round((value ?? 0) * 100) / 100));
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState<string>(
+    formatWithSpaces(Math.round((value ?? 0) * 100) / 100, 2),
+  );
   useEffect(() => {
-    setDraft(String(Math.round((value ?? 0) * 100) / 100));
-  }, [value]);
+    if (focused) return;
+    setDraft(formatWithSpaces(Math.round((value ?? 0) * 100) / 100, 2));
+  }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
-          type="number"
+          type="text"
           inputMode="decimal"
-          step={0.1}
-          min={0}
           value={draft}
+          onFocus={() => {
+            setFocused(true);
+            setDraft(String(Math.round((value ?? 0) * 100) / 100));
+          }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => {
-            const parsed = parseFloat(draft);
+            setFocused(false);
+            const parsed = parseSpaced(draft);
             if (!Number.isFinite(parsed) || parsed < 0) {
-              setDraft(String(Math.round((value ?? 0) * 100) / 100));
+              setDraft(formatWithSpaces(Math.round((value ?? 0) * 100) / 100, 2));
               return;
             }
             const rounded = Math.round(parsed * 100) / 100;
@@ -1248,6 +1288,7 @@ function KwhField({
             } else {
               onChange(rounded);
             }
+            setDraft(formatWithSpaces(rounded, 2));
           }}
           className="w-full min-w-0 pr-14 font-mono"
         />
