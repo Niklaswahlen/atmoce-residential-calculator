@@ -300,6 +300,91 @@ export function SnowMeltCard({
 
         {!compact && detailsOpen && (
           <>
+            {/* Månadsvis snösmältning – Oct–Apr översikt */}
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <h4 className="text-sm font-semibold">
+                  {t("Snösäsong okt–apr", "Snow season Oct–Apr")}
+                </h4>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-2.5 w-2.5 rounded-sm bg-atmoce" />
+                    {t("Smältning aktiv", "Melting active")}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-2.5 w-2.5 rounded-sm bg-muted" />
+                    {t("Inaktiv", "Inactive")}
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                {[9, 10, 11, 0, 1, 2, 3].map((mIdx) => {
+                  const r = result.rows[mIdx];
+                  const active = r.applied;
+                  return (
+                    <div
+                      key={r.month}
+                      className={`rounded-lg border-l-4 p-3 transition ${
+                        active
+                          ? "border-l-atmoce bg-atmoce/5"
+                          : "border-l-muted-foreground/30 bg-muted/40 opacity-70"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">{r.month}</span>
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                            active
+                              ? "bg-atmoce/15 text-atmoce"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {active ? t("På", "On") : t("Av", "Off")}
+                        </span>
+                      </div>
+                      <div className="mt-2 space-y-0.5">
+                        <div className="text-xs text-muted-foreground">
+                          {t("Återvunnet", "Recovered")}
+                        </div>
+                        <div className="font-mono text-sm font-semibold tabular-nums">
+                          {active ? `+${fmtNum(r.potentialKwh, 0)} kWh` : "—"}
+                        </div>
+                      </div>
+                      <div className="mt-1.5 space-y-0.5">
+                        <div className="text-xs text-muted-foreground">
+                          {t("Nettovinst", "Net gain")}
+                        </div>
+                        <div
+                          className={`font-mono text-sm font-semibold tabular-nums ${
+                            active
+                              ? r.netBenefit >= 0
+                                ? "text-atmoce"
+                                : "text-destructive"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {active ? fmtSek(r.netBenefit) : "—"}
+                        </div>
+                      </div>
+                      {!active && r.snowDays > 0 && (
+                        <div className="mt-1.5 text-[10px] text-muted-foreground">
+                          {t(
+                            "Ej lönsamt denna månad",
+                            "Not profitable this month",
+                          )}
+                        </div>
+                      )}
+                      {!active && r.snowDays === 0 && (
+                        <div className="mt-1.5 text-[10px] text-muted-foreground">
+                          {t("Inga snödagar", "No snow days")}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Chart */}
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
