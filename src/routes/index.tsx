@@ -1190,25 +1190,30 @@ function PriceField({
   hideEstimate?: boolean;
   onChange: (n: number | null) => void;
 }) {
-  const [draft, setDraft] = useState<string>(String(Math.round(value)));
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState<string>(formatWithSpaces(Math.round(value)));
   useEffect(() => {
-    setDraft(String(Math.round(value)));
-  }, [value]);
+    if (focused) return;
+    setDraft(formatWithSpaces(Math.round(value)));
+  }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
-          type="number"
+          type="text"
           inputMode="numeric"
-          step={100}
-          min={0}
           value={draft}
+          onFocus={() => {
+            setFocused(true);
+            setDraft(String(Math.round(value)));
+          }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => {
-            const parsed = parseFloat(draft);
+            setFocused(false);
+            const parsed = parseSpaced(draft);
             if (!Number.isFinite(parsed) || parsed < 0) {
-              setDraft(String(Math.round(value)));
+              setDraft(formatWithSpaces(Math.round(value)));
               return;
             }
             const rounded = Math.round(parsed);
@@ -1217,6 +1222,7 @@ function PriceField({
             } else {
               onChange(rounded);
             }
+            setDraft(formatWithSpaces(rounded));
           }}
           className="w-full min-w-0 pr-14 font-mono"
         />
@@ -1248,25 +1254,32 @@ function KwhField({
   isOverride: boolean;
   onChange: (n: number | null) => void;
 }) {
-  const [draft, setDraft] = useState<string>(String(Math.round((value ?? 0) * 100) / 100));
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState<string>(
+    formatWithSpaces(Math.round((value ?? 0) * 100) / 100, 2),
+  );
   useEffect(() => {
-    setDraft(String(Math.round((value ?? 0) * 100) / 100));
-  }, [value]);
+    if (focused) return;
+    setDraft(formatWithSpaces(Math.round((value ?? 0) * 100) / 100, 2));
+  }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
-          type="number"
+          type="text"
           inputMode="decimal"
-          step={0.1}
-          min={0}
           value={draft}
+          onFocus={() => {
+            setFocused(true);
+            setDraft(String(Math.round((value ?? 0) * 100) / 100));
+          }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => {
-            const parsed = parseFloat(draft);
+            setFocused(false);
+            const parsed = parseSpaced(draft);
             if (!Number.isFinite(parsed) || parsed < 0) {
-              setDraft(String(Math.round((value ?? 0) * 100) / 100));
+              setDraft(formatWithSpaces(Math.round((value ?? 0) * 100) / 100, 2));
               return;
             }
             const rounded = Math.round(parsed * 100) / 100;
@@ -1275,6 +1288,7 @@ function KwhField({
             } else {
               onChange(rounded);
             }
+            setDraft(formatWithSpaces(rounded, 2));
           }}
           className="w-full min-w-0 pr-14 font-mono"
         />
