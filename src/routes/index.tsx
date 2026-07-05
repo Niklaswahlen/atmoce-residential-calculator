@@ -222,6 +222,17 @@ function Index() {
     ? refModulesAuto
     : Math.max(1, Math.round(refKwhEffective / (refUnitKwh || 1)));
 
+  // Auto-match Atmoce battery modules to the reference system's total kWh
+  // whenever the user changes the reference side (dropdown, module count,
+  // or custom-system kWh). When the reference is auto-following Atmoce
+  // (no override, not custom), skip to avoid update loops.
+  const refKwhForMatch = isCustomRef ? customBatteryKwh : (refKwhOverride ?? null);
+  useEffect(() => {
+    if (refKwhForMatch === null) return;
+    const matched = Math.max(1, Math.round(refKwhForMatch / (atmoceUnitKwh || 1)));
+    setAtmoceModulesState((prev) => (prev === matched ? prev : matched));
+  }, [refKwhForMatch, atmoceUnitKwh]);
+
   const batteryModules: BatteryModulesMap = useMemo(
     () => ({ atmoce: atmoceModules, [referenceId]: refModules }),
     [atmoceModules, refModules, referenceId],
