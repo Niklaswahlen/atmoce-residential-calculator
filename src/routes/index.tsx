@@ -190,7 +190,7 @@ function Index() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const npvChartRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: pricing } = usePricingData();
+  const { data: pricing } = useCalculatorPricing();
   const [atmoceModulesState, setAtmoceModulesState] = useState<number | null>(null);
   // Prisöverride: null = använd modellens estimerade pris; annars fast pris (ink moms).
   const [atmocePriceOverride, setAtmocePriceOverride] = useState<number | null>(null);
@@ -203,19 +203,12 @@ function Index() {
   const [customInvWarranty, setCustomInvWarranty] = useState<number>(10);
   const [customBatWarranty, setCustomBatWarranty] = useState<number>(10);
 
-  const atmoceConfig = pricing?.systems.find((s) => s.id === "atmoce");
-  const refConfig = pricing?.systems.find((s) => s.id === referenceId);
-  const moduleIdFor = (cfg: typeof atmoceConfig) => {
-    if (!cfg) return null;
-    const bc = pricing?.batteryConfigs.find((b) => b.id === cfg.battery_config_id);
-    return bc?.module_component_id ?? cfg.battery_module_id ?? null;
-  };
-  const atmoceUnitKwh =
-    pricing?.components.find((c) => c.id === moduleIdFor(atmoceConfig))?.unit_kwh ?? 7;
-  const refUnitKwh =
-    pricing?.components.find((c) => c.id === moduleIdFor(refConfig))?.unit_kwh ?? 5.12;
+  const atmoceConfig = findPublicSystem(pricing, "atmoce");
+  const refConfig = findPublicSystem(pricing, referenceId);
+  const atmoceUnitKwh = atmoceConfig?.batteryKwhPerModule || 7;
+  const refUnitKwh = refConfig?.batteryKwhPerModule || 5.12;
 
-  const atmoceModulesDefault = atmoceConfig?.default_battery_modules ?? 2;
+  const atmoceModulesDefault = atmoceConfig?.defaultBatteryModules ?? 2;
   const atmoceModules = atmoceModulesState ?? atmoceModulesDefault;
   const targetKwh = atmoceModules * atmoceUnitKwh;
   const refModulesAuto = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
@@ -238,7 +231,7 @@ function Index() {
     setAtmoceModulesState((prev) => (prev === matched ? prev : matched));
   }, [refKwhForMatch, atmoceUnitKwh]);
 
-  const batteryModules: BatteryModulesMap = useMemo(
+  const batteryModules: CalculatorBatteryModules = useMemo(
     () => ({ atmoce: atmoceModules, [referenceId]: refModules }),
     [atmoceModules, refModules, referenceId],
   );
@@ -246,14 +239,10 @@ function Index() {
   const systems = useMemo(
     () =>
       pricing
-        ? buildSystems({
-            components: pricing.components,
-            systems: pricing.systems,
-            lines: pricing.lines,
-            settings: pricing.settings,
+        ? buildSystemsPublic({
+            payload: pricing,
             panels: params.panels,
             batteryModules,
-            batteryConfigs: pricing.batteryConfigs,
           })
         : SYSTEMS,
     [pricing, params.panels, batteryModules],
