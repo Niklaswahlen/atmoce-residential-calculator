@@ -38,7 +38,12 @@ import {
   INVERTER_REPLACEMENT_COST,
   type CalcParams,
 } from "@/lib/calc";
-import { usePricingData, buildSystems, type BatteryModulesMap } from "@/lib/usePrices";
+import {
+  useCalculatorPricing,
+  buildSystemsPublic,
+  findPublicSystem,
+  type CalculatorBatteryModules,
+} from "@/lib/useCalculatorPricing";
 import {
   SnowMeltCard,
   DEFAULT_SNOWMELT_STATE,
