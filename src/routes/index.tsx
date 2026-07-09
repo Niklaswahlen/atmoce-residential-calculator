@@ -42,8 +42,8 @@ import {
   useCalculatorPricing,
   buildSystemsPublic,
   findPublicSystem,
-  type CalculatorBatteryModules,
-} from "@/lib/useCalculatorPricing";
+  type BatteryModulesMap,
+} from "@/lib/usePrices";
 import {
   SnowMeltCard,
   DEFAULT_SNOWMELT_STATE,
@@ -231,7 +231,7 @@ function Index() {
     setAtmoceModulesState((prev) => (prev === matched ? prev : matched));
   }, [refKwhForMatch, atmoceUnitKwh]);
 
-  const batteryModules: CalculatorBatteryModules = useMemo(
+  const batteryModules: BatteryModulesMap = useMemo(
     () => ({ atmoce: atmoceModules, [referenceId]: refModules }),
     [atmoceModules, refModules, referenceId],
   );
@@ -240,7 +240,7 @@ function Index() {
     () =>
       pricing
         ? buildSystemsPublic({
-            payload: pricing,
+            pricing,
             panels: params.panels,
             batteryModules,
           })

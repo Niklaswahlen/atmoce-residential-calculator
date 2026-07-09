@@ -29,7 +29,7 @@ export interface PublicPricingPayload {
   defaults: { panels: number; wpPanel: number };
 }
 
-export function priceFromCoeffs(
+export function sidePrice(
   c: SidePriceCoeffs,
   panels: number,
   modules: number,

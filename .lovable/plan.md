@@ -1,53 +1,35 @@
-## Mål
+## Kontext
 
-Lägg till de två nya server functions (`getCalculatorPricing`, `getAdminPricing`) som separata filer och koppla **kalkylatorn** (`/`) till den publika endpointen så att kostnadsbas + marginal aldrig skickas till klienten. `/priser` (admin) rör vi inte i den här ändringen — den fortsätter använda befintlig `getPricingData`.
+I förra turnen skapade jag redan koefficientmodellen, men lade hook + build-funktion i en ny fil `src/lib/useCalculatorPricing.ts` och döpte helpern till `priceFromCoeffs`. Detta steg flyttar/​döper om enligt användarens spec så att admin-sidan förblir orörd och kalkylatorn använder `useCalculatorPricing` + `buildSystemsPublic` från de befintliga modulerna.
 
-## Nya filer
+## Ändringar
 
-**`src/lib/pricing-public.ts`** — client-safe typer:
-```ts
-export interface SidePriceCoeffs { base: number; perPanel: number; perModule: number }
-export interface PublicSystemPricing {
-  id: string; name: string; short: string;
-  pv: SidePriceCoeffs; ess: SidePriceCoeffs;
-  batteryKwhPerModule: number;
-  defaultBatteryModules: number;
-  minModules: number; maxModules: number;
-  sortOrder: number;
-}
-export interface PublicPricingPayload {
-  systems: PublicSystemPricing[];
-  defaults: { panels: number; wpPanel: number };
-}
-```
+**`src/lib/pricing-public.ts`**
+- Byt namn `priceFromCoeffs` → `sidePrice` (samma signatur, samma implementation).
 
-**`src/lib/pricing-public.functions.ts`** — exakt koden användaren klistrade in. Importerar typerna från `pricing-public.ts` och delar `verifyAdmin` från `pricing-admin.server.ts`. `supabaseAdmin` laddas fortsatt inuti handler (client-reachable modul).
+**`src/lib/usePricing.ts`** (admin-hooken bor här idag)
+- Lägg till `useCalculatorPricing()` som anropar `getCalculatorPricing` från `./pricing-public.functions` och returnerar `PublicPricingPayload` med `queryKey: ["calculator-pricing"]`, `staleTime: 15_000`.
+- Behåll `usePricingData` orörd.
 
-## Kalkylator-integration
+**`src/lib/usePrices.ts`**
+- Lägg till `buildSystemsPublic({ pricing, panels, batteryModules })` som mappar `pricing.systems` → `SystemSpec` via `sidePrice(...)` och `batteryKwhPerModule * modules`.
+- Behåll befintlig `buildSystems`.
+- Re-exportera `useCalculatorPricing` för symmetri med nuvarande `usePricingData`-re-export.
 
-Ny hook `src/lib/useCalculatorPricing.ts`:
-- `useQuery(['pricing-public'], getCalculatorPricing)` med `staleTime: 15s`.
-- Helper `priceFromCoeffs(c, panels, modules) = c.base + c.perPanel*panels + c.perModule*modules`.
-- Ny `buildSystemsPublic(payload, panels, batteryModules)` som returnerar samma `Record<SystemId, SystemSpec>`-form som befintliga `buildSystems`, men räknar `pvPrice`/`essPrice` via koefficienterna och `batteryKwh = batteryKwhPerModule * modules`.
+**`src/routes/index.tsx`**
+- Byt import från `useCalculatorPricing.ts` → `usePrices` (`useCalculatorPricing`, `buildSystemsPublic`, `BatteryModulesMap`, `findPublicSystem`).
+- Anropet till `buildSystemsPublic({ payload, ... })` justeras till nya signaturen `{ pricing, panels, batteryModules }`.
+- Panelantalets default kan tas från `pricing.defaults.panels` i initial state (om `pricing` finns när komponenten mountas — annars fortsätt med `DEFAULT_PARAMS.panels` som fallback). Inga UI-fält i kalkylatorn läser `settings.margin_pct` eller komponentlistan idag, så inget behöver tas bort.
 
-`src/routes/index.tsx`:
-- Byt `usePricingData` → nya hooken; byt `buildSystems(...)` → `buildSystemsPublic(...)`.
-- `defaultBatteryModules` byggs från `payload.systems` (`defaultBatteryModules` fältet).
-- `refUnitKwh` / atmoce-modul-kWh läses från `batteryKwhPerModule` i payloaden.
-- Inga andra beteendeförändringar (tusentalsseparator, 3-kolumnslayout, snowmelt osv orörda).
-
-## Admin
-
-`/priser` fortsätter använda `getPricingData` + befintliga admin-mutations. `getAdminPricing` läggs till som exporterad server function men konsumeras inte i den här ändringen (redo att användas om vi senare vill härda även admin-flödet via lösenord istället för att lita på att sidan är lösenordsskyddad i UI:t).
+**`src/lib/useCalculatorPricing.ts`**
+- Tas bort — dess innehåll flyttar in i `usePricing.ts` + `usePrices.ts`. `findPublicSystem` flyttar till `usePrices.ts`.
 
 ## Verifiering
 
-- `tsgo` typecheck rent.
-- Öppna `/` i preview: priser i vänster/mitt-kolumn matchar dagens siffror för samma paneler + batterimoduler (spot-check 1–2 system).
-- `/priser` fungerar oförändrat.
+- `tsgo --noEmit` rent.
+- Öppna `/`: ändra antal paneler och batterimoduler → priser i topprutan uppdateras direkt.
+- `/priser` fungerar oförändrat (fortsatt via `usePricingData`).
 
 ## Ej i scope
 
-- Byte av `/priser` till `getAdminPricing`.
-- Ändringar i `pricing.ts` / `computeSystemPrice` (behålls för admin-preview).
-- Nya RLS-policies (allt går fortsatt via server functions med service role).
+Ingen ändring i `pricing.functions.ts`, `getPricingData`, `routes/priser.tsx`, `components/priser/*` eller borttagning av befintliga funktioner.

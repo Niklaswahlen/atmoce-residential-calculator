@@ -7,8 +7,9 @@ import {
   type SystemConfig,
   type SystemLine,
 } from "./pricing";
+import { sidePrice, type PublicPricingPayload, type PublicSystemPricing } from "./pricing-public";
 
-export { usePricingData, PRICING_KEY } from "./usePricing";
+export { usePricingData, PRICING_KEY, useCalculatorPricing, CALCULATOR_PRICING_KEY } from "./usePricing";
 
 export interface BatteryModulesMap {
   [systemId: string]: number | undefined;
@@ -61,4 +62,38 @@ export function defaultBatteryModules(systems: SystemConfig[] | undefined): Batt
   const out: BatteryModulesMap = {};
   for (const s of systems ?? []) out[s.id] = s.default_battery_modules;
   return out;
+}
+
+/**
+ * Build SystemSpec map from the public (client-safe) pricing payload using
+ * per-side coefficients. Mirrors buildSystems() but never touches cost basis.
+ */
+export function buildSystemsPublic(args: {
+  pricing: PublicPricingPayload;
+  panels: number;
+  batteryModules?: BatteryModulesMap;
+}): Record<SystemId, SystemSpec> {
+  const { pricing, panels, batteryModules = {} } = args;
+  const out: Record<SystemId, SystemSpec> = { ...SYSTEMS };
+  for (const s of pricing.systems) {
+    const id = s.id as SystemId;
+    if (!out[id]) continue;
+    const modules = batteryModules[id] ?? s.defaultBatteryModules;
+    out[id] = {
+      ...out[id],
+      name: s.name,
+      short: s.short,
+      pvPrice: sidePrice(s.pv, panels, modules),
+      essPrice: sidePrice(s.ess, panels, modules),
+      batteryKwh: s.batteryKwhPerModule * modules || out[id].batteryKwh,
+    };
+  }
+  return out;
+}
+
+export function findPublicSystem(
+  pricing: PublicPricingPayload | undefined,
+  id: string,
+): PublicSystemPricing | undefined {
+  return pricing?.systems.find((s) => s.id === id);
 }
