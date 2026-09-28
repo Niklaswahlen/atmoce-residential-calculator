@@ -162,6 +162,8 @@ export const adminUpsertBatteryConfig = createServerFn({ method: "POST" })
       min_modules?: number;
       max_modules?: number;
       sort_order?: number;
+      warranty_years?: number | null;
+      warranty_cycles?: number | null;
     }>) => v,
   )
   .handler(async ({ data }) => {

@@ -42,6 +42,7 @@ import {
   useCalculatorPricing,
   buildSystemsPublic,
   findPublicSystem,
+  unitKwhFor,
   type BatteryModulesMap,
 } from "@/lib/usePrices";
 import {
@@ -205,11 +206,21 @@ function Index() {
 
   const atmoceConfig = findPublicSystem(pricing, "atmoce");
   const refConfig = findPublicSystem(pricing, referenceId);
-  const atmoceUnitKwh = atmoceConfig?.batteryKwhPerModule || 7;
+  const [atmoceBatteryConfigId, setAtmoceBatteryConfigId] = useState<string | null>(null);
+  const atmoceBatteryOptions = atmoceConfig?.batteryOptions ?? [];
+  const atmoceBatteryId =
+    atmoceBatteryConfigId ?? atmoceConfig?.defaultBatteryConfigId ?? undefined;
+  const atmoceUnitKwh = unitKwhFor(atmoceConfig, atmoceBatteryId) || 7;
   const refUnitKwh = refConfig?.batteryKwhPerModule || 5.12;
 
   const atmoceModulesDefault = atmoceConfig?.defaultBatteryModules ?? 2;
-  const atmoceModules = atmoceModulesState ?? atmoceModulesDefault;
+  const atmoceOption = atmoceBatteryOptions.find((o) => o.configId === atmoceBatteryId);
+  const atmoceMinModules = atmoceOption?.minModules ?? 1;
+  const atmoceMaxModules = atmoceOption?.maxModules ?? 15;
+  const atmoceModules = Math.max(
+    atmoceMinModules,
+    Math.min(atmoceMaxModules, atmoceModulesState ?? atmoceModulesDefault),
+  );
   const targetKwh = atmoceModules * atmoceUnitKwh;
   const refModulesAuto = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
   const refKwhAuto = refModulesAuto * refUnitKwh;
@@ -243,9 +254,10 @@ function Index() {
             pricing,
             panels: params.panels,
             batteryModules,
+            batteryConfigIds: { atmoce: atmoceBatteryId },
           })
         : SYSTEMS,
-    [pricing, params.panels, batteryModules],
+    [pricing, params.panels, batteryModules, atmoceBatteryId],
   );
 
   const atmoce = systems.atmoce;
@@ -480,6 +492,38 @@ function Index() {
                   <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
                   <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
                 </div>
+                {pricing && atmoceBatteryOptions.length > 1 && (
+                  <div className="min-w-0 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      {t("Atmoce batterimodell", "Atmoce battery model")}
+                    </Label>
+                    <Select
+                      value={atmoceBatteryId ?? ""}
+                      onValueChange={(v) => setAtmoceBatteryConfigId(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {atmoceBatteryOptions.map((o) => (
+                          <SelectItem key={o.configId} value={o.configId}>
+                            {o.name} — {fmtNum(o.kwhPerModule, 2)} kWh
+                            {o.warrantyYears ? ` · ${o.warrantyYears} ${t("år", "yrs")}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {atmoceOption && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("Garanti", "Warranty")}: {atmoceOption.warrantyYears ?? "—"}{" "}
+                        {t("år", "yrs")}
+                        {atmoceOption.warrantyCycles
+                          ? ` · ${fmtNum(atmoceOption.warrantyCycles, 0)} ${t("cykler", "cycles")}`
+                          : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {pricing && (
                   <NumField
                     label={t(
@@ -487,9 +531,16 @@ function Index() {
                       `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
                     )}
                     value={atmoceModules}
-                    onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
+                    onChange={(v) =>
+                      setAtmoceModulesState(
+                        Math.max(
+                          atmoceMinModules,
+                          Math.min(atmoceMaxModules, Math.round(v)),
+                        ),
+                      )
+                    }
                     editable
-                    min={1}
+                    min={atmoceMinModules}
                     suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                   />
                 )}

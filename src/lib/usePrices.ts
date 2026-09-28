@@ -72,23 +72,44 @@ export function buildSystemsPublic(args: {
   pricing: PublicPricingPayload;
   panels: number;
   batteryModules?: BatteryModulesMap;
+  /** systemId -> chosen battery config id (battery model). */
+  batteryConfigIds?: Record<string, string | undefined>;
 }): Record<SystemId, SystemSpec> {
-  const { pricing, panels, batteryModules = {} } = args;
+  const { pricing, panels, batteryModules = {}, batteryConfigIds = {} } = args;
   const out: Record<SystemId, SystemSpec> = { ...SYSTEMS };
   for (const s of pricing.systems) {
     const id = s.id as SystemId;
     if (!out[id]) continue;
     const modules = batteryModules[id] ?? s.defaultBatteryModules;
+    const chosenId = batteryConfigIds[s.id] ?? s.defaultBatteryConfigId ?? undefined;
+    const option = s.batteryOptions?.find((o) => o.configId === chosenId);
+    const ess = option?.ess ?? s.ess;
+    const kwhPerModule = option?.kwhPerModule ?? s.batteryKwhPerModule;
     out[id] = {
       ...out[id],
       name: s.name,
       short: s.short,
       pvPrice: sidePrice(s.pv, panels, modules),
-      essPrice: sidePrice(s.ess, panels, modules),
-      batteryKwh: s.batteryKwhPerModule * modules || out[id].batteryKwh,
+      essPrice: sidePrice(ess, panels, modules),
+      batteryKwh: kwhPerModule * modules || out[id].batteryKwh,
+      batteryWarrantyYears: option?.warrantyYears ?? out[id].batteryWarrantyYears,
+      batteryWarrantyCycles: option?.warrantyCycles ?? out[id].batteryWarrantyCycles,
     };
   }
   return out;
+}
+
+/** kWh per module for a system given the chosen battery model. */
+export function unitKwhFor(
+  system: PublicSystemPricing | undefined,
+  configId?: string,
+): number {
+  if (!system) return 0;
+  const id = configId ?? system.defaultBatteryConfigId ?? undefined;
+  return (
+    system.batteryOptions?.find((o) => o.configId === id)?.kwhPerModule ??
+    system.batteryKwhPerModule
+  );
 }
 
 export function findPublicSystem(
