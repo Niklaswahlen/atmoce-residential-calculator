@@ -1,35 +1,40 @@
-## Kontext
+# Tre Atmoce-batterimodeller med egen garanti
 
-I förra turnen skapade jag redan koefficientmodellen, men lade hook + build-funktion i en ny fil `src/lib/useCalculatorPricing.ts` och döpte helpern till `priceFromCoeffs`. Detta steg flyttar/​döper om enligt användarens spec så att admin-sidan förblir orörd och kalkylatorn använder `useCalculatorPricing` + `buildSystemsPublic` från de befintliga modulerna.
+Idag finns bara en Atmoce-batterikonfiguration (M-ELV, 7 kWh/modul) och garantin (15 år / 8 000 cykler) ligger hårdkodad på systemet. Planen lägger till två nya Atmoce-modeller och gör garanti + cykler till egenskaper på batterikonfigurationen, så att rätt siffror följer med i jämförelsen och i PDF:en.
 
-## Ändringar
+## Vad användaren får
 
-**`src/lib/pricing-public.ts`**
-- Byt namn `priceFromCoeffs` → `sidePrice` (samma signatur, samma implementation).
+En rullista "Atmoce batterimodell" i den översta rutan (bredvid antal batterimoduler) med tre val:
 
-**`src/lib/usePricing.ts`** (admin-hooken bor här idag)
-- Lägg till `useCalculatorPricing()` som anropar `getCalculatorPricing` från `./pricing-public.functions` och returnerar `PublicPricingPayload` med `queryKey: ["calculator-pricing"]`, `staleTime: 15_000`.
-- Behåll `usePricingData` orörd.
+| Modell | kWh/modul | Garanti | Cykler |
+|---|---|---|---|
+| Atmoce M-ELV | 7 kWh | 15 år | 8 000 |
+| Atmoce 8 kWh | 8 kWh | 25 år | 10 000 |
+| Atmoce 8 kWh PRO | 8 kWh | 25 år | 15 000 |
 
-**`src/lib/usePrices.ts`**
-- Lägg till `buildSystemsPublic({ pricing, panels, batteryModules })` som mappar `pricing.systems` → `SystemSpec` via `sidePrice(...)` och `batteryKwhPerModule * modules`.
-- Behåll befintlig `buildSystems`.
-- Re-exportera `useCalculatorPricing` för symmetri med nuvarande `usePricingData`-re-export.
+När modellen byts uppdateras kWh, pris, garanti och cykler direkt i Atmoce-kortet, i jämförelsetabellen och i PDF:en. Antal moduler: 1–6 per combiner.
 
-**`src/routes/index.tsx`**
-- Byt import från `useCalculatorPricing.ts` → `usePrices` (`useCalculatorPricing`, `buildSystemsPublic`, `BatteryModulesMap`, `findPublicSystem`).
-- Anropet till `buildSystemsPublic({ payload, ... })` justeras till nya signaturen `{ pricing, panels, batteryModules }`.
-- Panelantalets default kan tas från `pricing.defaults.panels` i initial state (om `pricing` finns när komponenten mountas — annars fortsätt med `DEFAULT_PARAMS.panels` som fallback). Inga UI-fält i kalkylatorn läser `settings.margin_pct` eller komponentlistan idag, så inget behöver tas bort.
+## Priser
 
-**`src/lib/useCalculatorPricing.ts`**
-- Tas bort — dess innehåll flyttar in i `usePricing.ts` + `usePrices.ts`. `findPublicSystem` flyttar till `usePrices.ts`.
+Inköpspriserna för de två nya modulerna och deras bas/BMS är inte kända ännu. De läggs in med 0 kr och fylls i på /priser → Komponenter när priserna kommer. Fram till dess visar kalkylen ett för lågt Atmoce-pris om någon av de nya modellerna väljs — det noteras i admin-fliken.
 
-## Verifiering
+## Teknisk genomförande
 
-- `tsgo --noEmit` rent.
-- Öppna `/`: ändra antal paneler och batterimoduler → priser i topprutan uppdateras direkt.
-- `/priser` fungerar oförändrat (fortsatt via `usePricingData`).
+**Databas (migration)**
+- `battery_configs`: nya kolumner `warranty_years integer` och `warranty_cycles integer` (nullable).
+- Backfill av befintliga konfigurationer med dagens värden (Atmoce M-ELV 15/8000, övriga 10/6000).
 
-## Ej i scope
+**Data (via query-verktyg, ej migration)**
+- Nya komponenter: `atmoce_8_module` (8 kWh), `atmoce_8_pro_module` (8 kWh), samt bas-/BMS-artiklar `atmoce_8_base`, `atmoce_8_pro_base` — alla med pris 0 tills priser finns.
+- Nya batterikonfigurationer `atmoce_8` och `atmoce_8_pro` (min 1, max 6, garanti 25 år, 10 000 respektive 15 000 cykler).
 
-Ingen ändring i `pricing.functions.ts`, `getPricingData`, `routes/priser.tsx`, `components/priser/*` eller borttagning av befintliga funktioner.
+**Publik prisberäkning** (`pricing-public.ts` / `pricing-public.functions.ts`)
+- `PublicSystemPricing` får en lista `batteryOptions: { configId, name, kwhPerModule, minModules, maxModules, warrantyYears, warrantyCycles, pv, ess }` — koefficienterna räknas per batterikonfiguration för system som har alternativ (idag endast Atmoce). Kostnadsbas och marginal fortsätter stanna på servern.
+
+**Kalkylator** (`src/routes/index.tsx`, `usePrices.ts`)
+- Ny state `atmoceBatteryConfigId` med M-ELV som default.
+- Rullista i översta kortet; vald konfiguration styr `atmoceUnitKwh`, priskoefficienter samt `batteryWarrantyYears` / `batteryWarrantyCycles` i `SystemSpec`.
+- Modulantal klampas till vald modells min/max, och auto-matchningen mot referenssystemets kWh använder vald modells kWh.
+
+**Admin** (`BatteryConfigsTab.tsx`)
+- Två nya fält per kort: Garanti (år) och Cykler, sparas via befintlig upsert-serverfunktion (fälten läggs till i `adminUpsertBatteryConfig`).
