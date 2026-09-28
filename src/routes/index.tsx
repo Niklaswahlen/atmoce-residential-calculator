@@ -257,7 +257,7 @@ function Index() {
             batteryConfigIds: { atmoce: atmoceBatteryId },
           })
         : SYSTEMS,
-    [pricing, params.panels, batteryModules],
+    [pricing, params.panels, batteryModules, atmoceBatteryId],
   );
 
   const atmoce = systems.atmoce;
