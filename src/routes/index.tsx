@@ -492,6 +492,38 @@ function Index() {
                   <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
                   <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
                 </div>
+                {pricing && atmoceBatteryOptions.length > 1 && (
+                  <div className="min-w-0 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      {t("Atmoce batterimodell", "Atmoce battery model")}
+                    </Label>
+                    <Select
+                      value={atmoceBatteryId ?? ""}
+                      onValueChange={(v) => setAtmoceBatteryConfigId(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {atmoceBatteryOptions.map((o) => (
+                          <SelectItem key={o.configId} value={o.configId}>
+                            {o.name} — {fmtNum(o.kwhPerModule, 2)} kWh
+                            {o.warrantyYears ? ` · ${o.warrantyYears} ${t("år", "yrs")}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {atmoceOption && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("Garanti", "Warranty")}: {atmoceOption.warrantyYears ?? "—"}{" "}
+                        {t("år", "yrs")}
+                        {atmoceOption.warrantyCycles
+                          ? ` · ${fmtNum(atmoceOption.warrantyCycles, 0)} ${t("cykler", "cycles")}`
+                          : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {pricing && (
                   <NumField
                     label={t(
@@ -499,9 +531,16 @@ function Index() {
                       `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
                     )}
                     value={atmoceModules}
-                    onChange={(v) => setAtmoceModulesState(Math.max(1, Math.round(v)))}
+                    onChange={(v) =>
+                      setAtmoceModulesState(
+                        Math.max(
+                          atmoceMinModules,
+                          Math.min(atmoceMaxModules, Math.round(v)),
+                        ),
+                      )
+                    }
                     editable
-                    min={1}
+                    min={atmoceMinModules}
                     suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                   />
                 )}
