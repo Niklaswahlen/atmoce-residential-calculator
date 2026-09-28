@@ -9,6 +9,7 @@ import type {
   SystemLine,
 } from "./pricing";
 import type {
+  PublicBatteryOption,
   PublicPricingPayload,
   PublicSystemPricing,
   SidePriceCoeffs,
