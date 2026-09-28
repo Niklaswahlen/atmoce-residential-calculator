@@ -130,21 +130,46 @@ function buildPublicPayload(raw: RawPricing): PublicPricingPayload {
     const bc = config.battery_config_id
       ? batteryConfigs.find((x) => x.id === config.battery_config_id)
       : undefined;
-    const essInjected: InjectedLine[] = [];
-    if (bc) {
-      if (bc.base_component_id)
-        essInjected.push({ component_id: bc.base_component_id, qty_kind: "fixed", qty_value: 1 });
-      essInjected.push({ component_id: bc.module_component_id, qty_kind: "per_battery_module", qty_value: 1 });
-      if (bc.bms_component_id)
-        essInjected.push({ component_id: bc.bms_component_id, qty_kind: "fixed", qty_value: 1 });
-    }
+
+    const injectedFor = (b: BatteryConfig | undefined): InjectedLine[] => {
+      const inj: InjectedLine[] = [];
+      if (!b) return inj;
+      if (b.base_component_id)
+        inj.push({ component_id: b.base_component_id, qty_kind: "fixed", qty_value: 1 });
+      inj.push({ component_id: b.module_component_id, qty_kind: "per_battery_module", qty_value: 1 });
+      if (b.bms_component_id)
+        inj.push({ component_id: b.bms_component_id, qty_kind: "fixed", qty_value: 1 });
+      return inj;
+    };
 
     const sysLines = lines.filter((l) => l.system_id === config.id);
+    const essFor = (b: BatteryConfig | undefined) =>
+      reduceSide(sysLines, byId, "ess", settings.margin_pct, settings.vat_pct, settings.gta_ess_pct, config.ess_override_inc_vat, injectedFor(b));
+
     const pv = reduceSide(sysLines, byId, "pv", settings.margin_pct, settings.vat_pct, settings.gta_pv_pct, config.pv_override_inc_vat);
-    const ess = reduceSide(sysLines, byId, "ess", settings.margin_pct, settings.vat_pct, settings.gta_ess_pct, config.ess_override_inc_vat, essInjected);
+    const ess = essFor(bc);
 
     const moduleId = bc?.module_component_id ?? config.battery_module_id ?? null;
     const batteryKwhPerModule = moduleId ? byId.get(moduleId)?.unit_kwh ?? 0 : 0;
+
+    // Selectable battery models: every config belonging to this system's
+    // family (id prefixed with the system id), plus the assigned one.
+    const family = batteryConfigs.filter(
+      (b) => b.id === bc?.id || b.id === config.id || b.id.startsWith(`${config.id}_`),
+    );
+    const batteryOptions: PublicBatteryOption[] = (family.length ? family : bc ? [bc] : [])
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((b) => ({
+        configId: b.id,
+        name: b.name,
+        short: b.short,
+        kwhPerModule: byId.get(b.module_component_id)?.unit_kwh ?? 0,
+        minModules: b.min_modules,
+        maxModules: b.max_modules,
+        warrantyYears: b.warranty_years ?? null,
+        warrantyCycles: b.warranty_cycles ?? null,
+        ess: essFor(b),
+      }));
 
     return {
       id: config.id,
@@ -157,6 +182,8 @@ function buildPublicPayload(raw: RawPricing): PublicPricingPayload {
       minModules: bc?.min_modules ?? 1,
       maxModules: bc?.max_modules ?? 15,
       sortOrder: config.sort_order,
+      batteryOptions,
+      defaultBatteryConfigId: bc?.id ?? null,
     };
   });
 
