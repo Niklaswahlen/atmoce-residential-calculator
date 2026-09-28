@@ -205,7 +205,11 @@ function Index() {
 
   const atmoceConfig = findPublicSystem(pricing, "atmoce");
   const refConfig = findPublicSystem(pricing, referenceId);
-  const atmoceUnitKwh = atmoceConfig?.batteryKwhPerModule || 7;
+  const [atmoceBatteryConfigId, setAtmoceBatteryConfigId] = useState<string | null>(null);
+  const atmoceBatteryOptions = atmoceConfig?.batteryOptions ?? [];
+  const atmoceBatteryId =
+    atmoceBatteryConfigId ?? atmoceConfig?.defaultBatteryConfigId ?? undefined;
+  const atmoceUnitKwh = unitKwhFor(atmoceConfig, atmoceBatteryId) || 7;
   const refUnitKwh = refConfig?.batteryKwhPerModule || 5.12;
 
   const atmoceModulesDefault = atmoceConfig?.defaultBatteryModules ?? 2;
