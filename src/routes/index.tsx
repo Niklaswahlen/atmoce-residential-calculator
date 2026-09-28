@@ -42,6 +42,7 @@ import {
   useCalculatorPricing,
   buildSystemsPublic,
   findPublicSystem,
+  unitKwhFor,
   type BatteryModulesMap,
 } from "@/lib/usePrices";
 import {
