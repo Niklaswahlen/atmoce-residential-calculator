@@ -214,7 +214,13 @@ function Index() {
   const refUnitKwh = refConfig?.batteryKwhPerModule || 5.12;
 
   const atmoceModulesDefault = atmoceConfig?.defaultBatteryModules ?? 2;
-  const atmoceModules = atmoceModulesState ?? atmoceModulesDefault;
+  const atmoceOption = atmoceBatteryOptions.find((o) => o.configId === atmoceBatteryId);
+  const atmoceMinModules = atmoceOption?.minModules ?? 1;
+  const atmoceMaxModules = atmoceOption?.maxModules ?? 15;
+  const atmoceModules = Math.max(
+    atmoceMinModules,
+    Math.min(atmoceMaxModules, atmoceModulesState ?? atmoceModulesDefault),
+  );
   const targetKwh = atmoceModules * atmoceUnitKwh;
   const refModulesAuto = Math.max(1, Math.round(targetKwh / (refUnitKwh || 1)));
   const refKwhAuto = refModulesAuto * refUnitKwh;
@@ -248,6 +254,7 @@ function Index() {
             pricing,
             panels: params.panels,
             batteryModules,
+            batteryConfigIds: { atmoce: atmoceBatteryId },
           })
         : SYSTEMS,
     [pricing, params.panels, batteryModules],
