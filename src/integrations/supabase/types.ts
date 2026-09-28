@@ -26,6 +26,8 @@ export type Database = {
           short: string
           sort_order: number
           updated_at: string
+          warranty_cycles: number | null
+          warranty_years: number | null
         }
         Insert: {
           base_component_id?: string | null
@@ -38,6 +40,8 @@ export type Database = {
           short: string
           sort_order?: number
           updated_at?: string
+          warranty_cycles?: number | null
+          warranty_years?: number | null
         }
         Update: {
           base_component_id?: string | null
@@ -50,6 +54,8 @@ export type Database = {
           short?: string
           sort_order?: number
           updated_at?: string
+          warranty_cycles?: number | null
+          warranty_years?: number | null
         }
         Relationships: [
           {
