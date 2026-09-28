@@ -11,6 +11,19 @@ export interface SidePriceCoeffs {
   perModule: number;
 }
 
+export interface PublicBatteryOption {
+  configId: string;
+  name: string;
+  short: string;
+  kwhPerModule: number;
+  minModules: number;
+  maxModules: number;
+  warrantyYears: number | null;
+  warrantyCycles: number | null;
+  /** ESS-side coefficients when this battery model is selected. */
+  ess: SidePriceCoeffs;
+}
+
 export interface PublicSystemPricing {
   id: string;
   name: string;
@@ -22,6 +35,9 @@ export interface PublicSystemPricing {
   minModules: number;
   maxModules: number;
   sortOrder: number;
+  /** Selectable battery models for this system (at least the default one). */
+  batteryOptions: PublicBatteryOption[];
+  defaultBatteryConfigId: string | null;
 }
 
 export interface PublicPricingPayload {
