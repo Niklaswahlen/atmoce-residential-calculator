@@ -124,6 +124,8 @@ function ConfigCard({
             bms_component_id: draft.bms_component_id,
             min_modules: draft.min_modules,
             max_modules: draft.max_modules,
+            warranty_years: draft.warranty_years ?? null,
+            warranty_cycles: draft.warranty_cycles ?? null,
           },
         },
       });
@@ -206,6 +208,20 @@ function ConfigCard({
             onChange={(v) => setDraft({ ...draft, max_modules: v })}
           />
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <FieldNum
+            label={t("Garanti (år)", "Warranty (years)")}
+            value={draft.warranty_years ?? 0}
+            onChange={(v) => setDraft({ ...draft, warranty_years: v })}
+          />
+          <FieldNum
+            label={t("Cykler", "Cycles")}
+            value={draft.warranty_cycles ?? 0}
+            onChange={(v) => setDraft({ ...draft, warranty_cycles: v })}
+          />
+        </div>
+
 
         <div className="flex items-center justify-between pt-1">
           <Button
