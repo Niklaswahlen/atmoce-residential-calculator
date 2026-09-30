@@ -574,7 +574,7 @@ function Index() {
                         setRefKwhOverride(null);
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -641,7 +641,7 @@ function Index() {
                       setRefKwhOverride(null);
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1399,7 +1399,7 @@ function PriceField({
           }}
           className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
         />
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
           kr
         </span>
       </div>
