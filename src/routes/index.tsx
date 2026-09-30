@@ -930,6 +930,18 @@ function Index() {
 
           {/* Results */}
           <section className="space-y-6">
+            <div className="flex justify-end">
+              <PdfButton
+                onClick={handleGeneratePdf}
+                loading={pdfLoading}
+                label={
+                  pdfLoading
+                    ? t("Genererar…", "Generating…")
+                    : t("Sammanfattning som PDF", "Summary as PDF")
+                }
+              />
+            </div>
+
             {/* Side-by-side metric cards */}
             <div className="grid gap-4 md:grid-cols-2">
               <SystemCard
