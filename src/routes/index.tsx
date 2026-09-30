@@ -400,6 +400,29 @@ function Index() {
     [params.years, refReplacements],
   );
 
+  // --- Atmoce-fördelar (vinnarkort) ---
+  const inverterSavings = refReplacements * INVERTER_REPLACEMENT_COST;
+  const bonusKwhPerYear = kWp * params.yieldPerKwp * (panelBonusPct / 100);
+  const extraKwhPerYear = bonusKwhPerYear + snow.totalRecoveredKwh;
+  const atmoceWarrantyYears =
+    atmoceOption?.warrantyYears ?? atmoce.batteryWarrantyYears ?? null;
+  const atmoceWarrantyCycles =
+    atmoceOption?.warrantyCycles ?? atmoce.batteryWarrantyCycles ?? null;
+  const refWarrantyYears = reference.batteryWarrantyYears ?? null;
+  const refWarrantyCycles = reference.batteryWarrantyCycles ?? null;
+
+  // Applicera en snabbmall: panelantal + rimligt batteri, och låt
+  // referenssystemet automatiskt matcha den nya kapaciteten.
+  const applyPreset = (panels: number, modules: number) => {
+    setParams((p) => ({ ...p, panels }));
+    setAtmoceModulesState(
+      Math.max(atmoceMinModules, Math.min(atmoceMaxModules, modules)),
+    );
+    setRefKwhOverride(null);
+    setAtmocePriceOverride(null);
+    setRefPriceOverride(null);
+  };
+
   const handleGeneratePdf = async () => {
     setPdfLoading(true);
     try {
