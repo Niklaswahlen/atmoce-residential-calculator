@@ -504,18 +504,18 @@ function Index() {
         }
       />
 
-      <main className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-5">
         {/* Snabb-override: paneler + faktiska offertpriser */}
-        <Card className="mb-6 border-l-4 border-l-atmoce">
-          <CardHeader className="pb-3">
+        <Card className="mb-4 border-l-4 border-l-atmoce">
+          <CardHeader className="pb-1 pt-4">
             <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
               {t("Dina siffror", "Your numbers")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 lg:grid-cols-3">
+          <CardContent className="pb-4">
+            <div className="grid gap-4 lg:grid-cols-3">
               {/* Kolumn 1: Anläggning + Atmoce batteri */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
@@ -530,7 +530,7 @@ function Index() {
                       type="button"
                       size="sm"
                       variant={params.panels === p.panels ? "default" : "outline"}
-                      className="h-8 px-3 text-xs"
+                      className="h-7 px-2.5 text-xs"
                       onClick={() => applyPreset(p.panels, p.modules)}
                     >
                       {p.panels} {t("paneler", "panels")}
@@ -540,7 +540,7 @@ function Index() {
                     </Button>
                   ))}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <NumField
                     label={t("Antal solpaneler", "Number of solar panels")}
                     value={params.panels}
@@ -557,7 +557,7 @@ function Index() {
                     suffix="W"
                   />
                 </div>
-                <div className="rounded-md bg-muted px-3 py-2 text-xs">
+                <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs">
                   <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
                   <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
                 </div>
@@ -617,7 +617,7 @@ function Index() {
                     suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                   />
                 )}
-                <div className="rounded-md bg-muted px-3 py-2 text-xs font-mono">
+                <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs font-mono">
                   Atmoce <b>{fmtNum(atmoce.batteryKwh, 1)} kWh</b>{" "}
                   <span className="text-muted-foreground">↔</span>{" "}
                   {reference.short} <b>{fmtNum(reference.batteryKwh, 1)} kWh</b>
@@ -625,7 +625,7 @@ function Index() {
               </div>
 
               {/* Kolumn 2: Annat system */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Annat system (referens)", "Other system (reference)")}
                 </div>
@@ -707,7 +707,7 @@ function Index() {
                       min={1}
                       suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
                     />
-                    <div className="rounded-md bg-muted px-3 py-2 text-xs font-mono">
+                    <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs font-mono">
                       {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
                       <span className="font-semibold">
                         {fmtNum(reference.batteryKwh, 2)} kWh
@@ -718,7 +718,7 @@ function Index() {
               </div>
 
               {/* Kolumn 3: Priser */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Priser", "Prices")}
                 </div>
@@ -773,7 +773,7 @@ function Index() {
         </Card>
 
         {/* Atmoce-fördelar: fyra vinnarkort */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <WinCard
             label={t("Ekonomisk vinst", "Economic gain")}
             value={`${extraSavings >= 0 ? "+" : ""}${fmtSek(extraSavings)}`}
