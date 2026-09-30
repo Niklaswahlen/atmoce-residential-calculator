@@ -30,6 +30,9 @@ export interface PdfInput {
   years: number;
   panels: number;
   wpPerPanel: number;
+  /** Atmoce batterigaranti för vald modell (år/cykler) — dynamiskt från kalkylatorn. */
+  atmoceBatteryWarrantyYears?: number | null;
+  atmoceBatteryWarrantyCycles?: number | null;
   chartElement?: HTMLElement | null;
 }
 
@@ -69,33 +72,33 @@ function drawNpvChart(
 
   // Title
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
+  doc.setFontSize(10);
   doc.setTextColor(...PLUM);
-  doc.text(title, x + 4, y + 6);
+  doc.text(title, x + 5, y + 7.5);
 
   // Legend (top right)
-  const legendY = y + 6;
-  let legendX = x + w - 4;
+  const legendY = y + 7.5;
+  let legendX = x + w - 5;
   const legendItems: { label: string; color: [number, number, number] }[] = [
     { label: refLabel, color: FAINT },
     { label: atmoceLabel, color: CORAL },
   ];
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
+  doc.setFontSize(7.5);
   legendItems.forEach((it) => {
     const tw = doc.getTextWidth(it.label);
     doc.setTextColor(...MUTED);
     doc.text(it.label, legendX - tw, legendY);
     doc.setFillColor(...it.color);
-    doc.rect(legendX - tw - 4, legendY - 2, 3, 1.6, "F");
-    legendX -= tw + 10;
+    doc.rect(legendX - tw - 4.5, legendY - 2.2, 3.5, 1.8, "F");
+    legendX -= tw + 11;
   });
 
   // Plot area
-  const padL = 15;
-  const padR = 5;
-  const padT = 10;
-  const padB = 9;
+  const padL = 16;
+  const padR = 6;
+  const padT = 13;
+  const padB = 11;
   const plotX = x + padL;
   const plotY = y + padT;
   const plotW = w - padL - padR;
@@ -119,10 +122,10 @@ function drawNpvChart(
     py: plotY + plotH - ((val - yMin) / (yMax - yMin)) * plotH,
   });
 
-  // Y ticks (5) — ljusa hjälplinjer
+  // Y ticks — ljusa hjälplinjer
   const yTicks = 4;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
+  doc.setFontSize(7);
   doc.setTextColor(...FAINT);
   doc.setDrawColor(...GRID);
   doc.setLineWidth(0.12);
@@ -153,7 +156,7 @@ function drawNpvChart(
     const { px } = toPx(yr, yMin);
     const py = plotY + plotH;
     doc.line(px, py, px, py + 1);
-    doc.text(String(yr), px, py + 3.4, { align: "center" });
+    doc.text(String(yr), px, py + 3.6, { align: "center" });
   }
 
   // Axellinjer — tunna och diskreta
@@ -182,19 +185,19 @@ function drawNpvChart(
       const dotStep = years >= 20 ? 5 : years >= 10 ? 2 : 1;
       for (let yr = 0; yr <= years; yr += dotStep) {
         const p = toPx(yr, series[yr]);
-        doc.circle(p.px, p.py, 0.35, "F");
+        doc.circle(p.px, p.py, 0.4, "F");
       }
     }
   };
 
-  drawSeries(refSeries, FAINT, 0.45, false);
-  drawSeries(atmoceSeries, CORAL, 0.85, true);
+  drawSeries(refSeries, FAINT, 0.5, false);
+  drawSeries(atmoceSeries, CORAL, 0.9, true);
 
   // Takeaway-raden längst ner i kortet
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
+  doc.setFontSize(8.5);
   doc.setTextColor(...MUTED);
-  doc.text(takeaway, x + 4, y + h - 2.5);
+  doc.text(takeaway, x + 5, y + h - 3);
 }
 
 function drawStatBox(
@@ -206,24 +209,40 @@ function drawStatBox(
   label: string,
   value: string,
   sub: string | undefined,
-  valueSize = 10.5,
+  valueSize = 11.5,
 ) {
   doc.setFillColor(...TINT);
-  doc.roundedRect(x, y, w, h, 1.2, 1.2, "F");
+  doc.roundedRect(x, y, w, h, 1.4, 1.4, "F");
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.3);
+  doc.setFontSize(6.8);
   doc.setTextColor(...MUTED);
-  doc.text(label.toUpperCase(), x + 3.5, y + 4.2, { charSpace: 0.25 });
+  doc.text(label.toUpperCase(), x + 4, y + 5, { charSpace: 0.3 });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(valueSize);
   doc.setTextColor(...PLUM);
-  doc.text(value, x + 3.5, y + 9.2);
+  doc.text(value, x + 4, y + 11);
   if (sub) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.3);
+    doc.setFontSize(6.8);
     doc.setTextColor(...MUTED);
-    doc.text(sub, x + 3.5, y + h - 1.8);
+    doc.text(sub, x + 4, y + h - 2.2);
   }
+}
+
+function drawFooter(doc: jsPDF, pageW: number, pageH: number, margin: number) {
+  doc.setDrawColor(...GRID);
+  doc.setLineWidth(0.2);
+  doc.line(margin, pageH - 10, pageW - margin, pageH - 10);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.8);
+  doc.setTextColor(...FAINT);
+  doc.text(
+    "Beräkningarna är indikativa och baseras på prislista 2026 inkl. 15 % grönt teknikavdrag.",
+    margin,
+    pageH - 5.5,
+  );
+  const gen = "Genererad av Atmoce-kalkylatorn";
+  doc.text(gen, pageW - margin - doc.getTextWidth(gen), pageH - 5.5);
 }
 
 export async function generateSummaryPdf(input: PdfInput) {
@@ -239,40 +258,49 @@ export async function generateSummaryPdf(input: PdfInput) {
     wpPerPanel,
   } = input;
 
+  const atmoceBattWarrantyYears =
+    input.atmoceBatteryWarrantyYears ?? atmoce.batteryWarrantyYears ?? null;
+  const atmoceBattWarrantyCycles =
+    input.atmoceBatteryWarrantyCycles ?? atmoce.batteryWarrantyCycles ?? null;
+  const refBattWarrantyYears = reference.batteryWarrantyYears ?? null;
+  const refBattWarrantyCycles = reference.batteryWarrantyCycles ?? null;
+
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 12;
+  const margin = 14;
 
   const today = new Date().toLocaleDateString("sv-SE");
+
+  // ================= SIDA 1 =================
 
   // ---- Sidhuvud: ljus, ATMOCE-ordmärke, tunn coral-linje ----
   doc.setTextColor(...PLUM);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(17);
-  doc.text("ATMOCE", margin, 14);
+  doc.setFontSize(19);
+  doc.text("ATMOCE", margin, 17);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
+  doc.setFontSize(7.5);
   doc.setTextColor(...MUTED);
-  doc.text("INVESTERINGSKALKYL — SOLENERGI", margin, 19.5, { charSpace: 0.5 });
+  doc.text("INVESTERINGSKALKYL — SOLENERGI", margin, 23, { charSpace: 0.5 });
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
+  doc.setFontSize(9);
   doc.setTextColor(...MUTED);
   const right = `${snow.location.name}  ·  ${today}`;
-  doc.text(right, pageW - margin, 12.5, { align: "right" });
+  doc.text(right, pageW - margin, 15, { align: "right" });
 
   doc.setDrawColor(...CORAL);
   doc.setLineWidth(0.8);
-  doc.line(margin, 23, pageW - margin, 23);
+  doc.line(margin, 27, pageW - margin, 27);
 
-  let cursorY = 28.5;
+  let cursorY = 34;
 
   // ---- Tre nyckelvärdes-boxar ----
   {
-    const gap = 4;
+    const gap = 5;
     const boxW = (pageW - 2 * margin - 2 * gap) / 3;
-    const boxH = 13.5;
+    const boxH = 16.5;
     const kWp = fmtNum((panels * wpPerPanel) / 1000, 2);
     drawStatBox(doc, margin, cursorY, boxW, boxH, "Installerad effekt", `${kWp} kWp`, `${panels} paneler × ${wpPerPanel} W`);
     drawStatBox(doc, margin + boxW + gap, cursorY, boxW, boxH, "Kalkyltid", `${years} år`, undefined);
@@ -285,9 +313,9 @@ export async function generateSummaryPdf(input: PdfInput) {
       "Jämförelse",
       `${atmoce.name} vs ${reference.name}`,
       undefined,
-      8.5,
+      9,
     );
-    cursorY += boxH + 4.5;
+    cursorY += boxH + 8;
   }
 
   // ---- Jämförelsetabell: tunna hjälplinjer, ingen yttre grid ----
@@ -315,6 +343,16 @@ export async function generateSummaryPdf(input: PdfInput) {
         : paybackB === null
           ? "a"
           : cmpLower(paybackA, paybackB);
+
+  const fmtWarranty = (yrs: number | null, cycles: number | null): string => {
+    if (yrs === null && cycles === null) return "—";
+    const yrsPart = yrs !== null ? `${yrs} år` : "";
+    const cycPart = cycles !== null ? `${fmtNum(cycles)} cykler` : "";
+    return [yrsPart, cycPart].filter(Boolean).join(" / ");
+  };
+
+  const pricePerKwhA = atmoce.batteryKwh > 0 ? atmoce.essPrice / atmoce.batteryKwh : 0;
+  const pricePerKwhB = reference.batteryKwh > 0 ? reference.essPrice / reference.batteryKwh : 0;
 
   const rows: Cmp[] = [
     {
@@ -373,6 +411,26 @@ export async function generateSummaryPdf(input: PdfInput) {
       delta: fmtSek(Math.abs(atmoceResult.totalSavings - refResult.totalSavings)),
     },
     {
+      label: "Batteristorlek",
+      a: `${fmtNum(atmoce.batteryKwh, 1)} kWh`,
+      b: `${fmtNum(reference.batteryKwh, 1)} kWh`,
+      winner: cmpHigher(atmoce.batteryKwh, reference.batteryKwh),
+      delta: `${fmtNum(Math.abs(atmoce.batteryKwh - reference.batteryKwh), 1)} kWh`,
+    },
+    {
+      label: "Batterigaranti",
+      a: fmtWarranty(atmoceBattWarrantyYears, atmoceBattWarrantyCycles),
+      b: fmtWarranty(refBattWarrantyYears, refBattWarrantyCycles),
+      winner: cmpHigher(atmoceBattWarrantyYears ?? 0, refBattWarrantyYears ?? 0),
+    },
+    {
+      label: "Pris per kWh batteri",
+      a: `${fmtNum(pricePerKwhA)} kr/kWh`,
+      b: `${fmtNum(pricePerKwhB)} kr/kWh`,
+      winner: cmpLower(pricePerKwhA, pricePerKwhB),
+      delta: `${fmtNum(Math.abs(pricePerKwhA - pricePerKwhB))} kr/kWh`,
+    },
+    {
       label: "Växelriktarbyten",
       a: "0 byten",
       b: `${refResult.replacementYears.length} byten (${fmtSek(refResult.totalReplacementCost)})`,
@@ -416,26 +474,26 @@ export async function generateSummaryPdf(input: PdfInput) {
       fillColor: [255, 255, 255],
       textColor: [150, 142, 152],
       fontStyle: "bold",
-      fontSize: 7,
-      cellPadding: { top: 1.5, bottom: 1.5, left: 0.5, right: 1.5 },
+      fontSize: 7.5,
+      cellPadding: { top: 2, bottom: 2, left: 0.5, right: 1.5 },
     },
     bodyStyles: {
-      fontSize: 8,
+      fontSize: 8.5,
       textColor: PLUM,
-      cellPadding: { top: 1.8, bottom: 1.8, left: 0.5, right: 1.5 },
+      cellPadding: { top: 2.9, bottom: 2.9, left: 0.5, right: 1.5 },
     },
     columnStyles: {
-      0: { fontStyle: "bold", cellWidth: 48 },
+      0: { fontStyle: "bold", cellWidth: 50 },
       1: { halign: "right" },
       2: { halign: "right" },
-      3: { halign: "right", textColor: MUTED, fontSize: 7, cellWidth: 34 },
+      3: { halign: "right", textColor: MUTED, fontSize: 7.5, cellWidth: 36 },
     },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
       if (data.section === "head" && data.column.index === 1) {
         data.cell.styles.textColor = CORAL;
         data.cell.styles.fontStyle = "bold";
-        data.cell.styles.fontSize = 7.5;
+        data.cell.styles.fontSize = 8;
       }
       if (data.section !== "body") return;
       const row = rows[data.row.index];
@@ -467,47 +525,63 @@ export async function generateSummaryPdf(input: PdfInput) {
     },
   });
   // @ts-expect-error - autoTable adds lastAutoTable
-  cursorY = (doc.lastAutoTable?.finalY ?? cursorY) + 5;
+  cursorY = (doc.lastAutoTable?.finalY ?? cursorY) + 8;
 
   // ---- Resultat-kort: mörkt plum, rundade hörn ----
   {
-    const stripH = 15;
+    const stripH = 18;
     doc.setFillColor(...PLUM);
-    doc.roundedRect(margin, cursorY, pageW - 2 * margin, stripH, 1.5, 1.5, "F");
+    doc.roundedRect(margin, cursorY, pageW - 2 * margin, stripH, 1.8, 1.8, "F");
     doc.setFillColor(...CORAL);
-    doc.roundedRect(margin, cursorY, 2.2, stripH, 1, 1, "F");
+    doc.roundedRect(margin, cursorY, 2.4, stripH, 1.1, 1.1, "F");
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.3);
-    doc.text("RESULTAT", margin + 5, cursorY + 4.6, { charSpace: 0.35 });
+    doc.setFontSize(6.8);
+    doc.text("RESULTAT", margin + 6, cursorY + 5.6, { charSpace: 0.35 });
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10.5);
+    doc.setFontSize(11.5);
     const scoreText = `${atmoce.name} ${atmoceWins} – ${refWins} ${reference.name}`;
-    doc.text(scoreText, margin + 5, cursorY + 10.2);
+    doc.text(scoreText, margin + 6, cursorY + 12.4);
     const scoreW = doc.getTextWidth(scoreText);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
+    doc.setFontSize(8);
     doc.setTextColor(210, 200, 212);
-    doc.text(`(oavgjort ${ties})`, margin + 5 + scoreW + 1.6, cursorY + 10.2);
+    doc.text(`(oavgjort ${ties})`, margin + 6 + scoreW + 1.8, cursorY + 12.4);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.3);
+    doc.setFontSize(7.8);
     doc.setTextColor(220, 212, 222);
     const snowLine1 = `Snösmältning ${snow.location.name} (${MODE_LABEL[snowMode]}): +${fmtNum(snow.totalRecoveredKwh)} kWh/år`;
     const snowLine2 = `Nettovinst ${fmtSek(snow.totalNetBenefit)}/år`;
-    doc.text(snowLine1, pageW - margin - 4, cursorY + 6.2, { align: "right" });
-    doc.text(snowLine2, pageW - margin - 4, cursorY + 10.4, { align: "right" });
-    cursorY += stripH + 5;
+    doc.text(snowLine1, pageW - margin - 5, cursorY + 7.4, { align: "right" });
+    doc.text(snowLine2, pageW - margin - 5, cursorY + 12.2, { align: "right" });
   }
 
-  // ---- NPV-graf: kompakt kort ----
+  drawFooter(doc, pageW, pageH, margin);
+
+  // ================= SIDA 2 =================
+  doc.addPage();
+
+  // ---- Litet sidhuvud ----
+  doc.setTextColor(...PLUM);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("ATMOCE", margin, 15);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...MUTED);
+  doc.text("Nuvärde & argument", margin + 24, 15);
+  doc.setDrawColor(...CORAL);
+  doc.setLineWidth(0.8);
+  doc.line(margin, 19, pageW - margin, 19);
+
+  cursorY = 27;
+
+  // ---- NPV-graf: större kort ----
   {
     const availW = pageW - 2 * margin;
-    // USP-rutnät: 3 rader × 13 mm + 2 gap × 2.5 mm + rubrik + sidfot
-    const uspBlockH = 3 * 14 + 2 * 3.5 + 4;
-    const footerSpace = 9;
-    const chartH = Math.min(76, Math.max(44, pageH - cursorY - uspBlockH - footerSpace - 7));
+    const chartH = 96;
     const atmoceSeries = [
       -atmoceResult.investment,
       ...atmoceResult.rows.map((r) => r.cumulativeNpv),
@@ -534,11 +608,17 @@ export async function generateSummaryPdf(input: PdfInput) {
       title: `Ackumulerat nuvärde över ${years} år (kr)`,
       takeaway,
     });
-    cursorY += chartH + 5;
+    cursorY += chartH + 10;
   }
 
   // ---- USP: 2×3-rutnät av ljusa kort ----
   {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...PLUM);
+    doc.text("Varför Atmoce?", margin, cursorY + 3);
+    cursorY += 8;
+
     const usps: { title: string; body: string }[] = [
       {
         title: "25 års produktgaranti",
@@ -566,9 +646,9 @@ export async function generateSummaryPdf(input: PdfInput) {
       },
     ];
 
-    const cardH = 14;
-    const colGap = 3;
-    const rowGap = 3.5;
+    const cardH = 17;
+    const colGap = 4;
+    const rowGap = 4.5;
     const colW = (pageW - 2 * margin - colGap) / 2;
 
     usps.forEach((u, i) => {
@@ -578,44 +658,28 @@ export async function generateSummaryPdf(input: PdfInput) {
       const y = cursorY + row * (cardH + rowGap);
 
       doc.setFillColor(...TINT);
-      doc.roundedRect(x, y, colW, cardH, 1.2, 1.2, "F");
+      doc.roundedRect(x, y, colW, cardH, 1.4, 1.4, "F");
 
       const num = `0${i + 1}`;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
+      doc.setFontSize(7.5);
       doc.setTextColor(...CORAL);
-      doc.text(num, x + 3.5, y + 4.4);
+      doc.text(num, x + 4, y + 5.4);
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
+      doc.setFontSize(8.5);
       doc.setTextColor(...PLUM);
-      doc.text(u.title, x + 10.5, y + 4.4);
+      doc.text(u.title, x + 12, y + 5.4);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.8);
+      doc.setFontSize(7.2);
       doc.setTextColor(...MUTED);
-      const wrapped = doc.splitTextToSize(u.body, colW - 14);
-      doc.text(wrapped, x + 10.5, y + 8.6);
+      const wrapped = doc.splitTextToSize(u.body, colW - 16);
+      doc.text(wrapped, x + 12, y + 10.4);
     });
-    cursorY += 3 * cardH + 2 * rowGap + 5;
   }
 
-  // ---- Sidfot ----
-  {
-    doc.setDrawColor(...GRID);
-    doc.setLineWidth(0.2);
-    doc.line(margin, pageH - 8, pageW - margin, pageH - 8);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.5);
-    doc.setTextColor(...FAINT);
-    doc.text(
-      "Beräkningarna är indikativa och baseras på prislista 2026 inkl. 15 % grönt teknikavdrag.",
-      margin,
-      pageH - 4.5,
-    );
-    const gen = "Genererad av Atmoce-kalkylatorn";
-    doc.text(gen, pageW - margin - doc.getTextWidth(gen), pageH - 4.5);
-  }
+  drawFooter(doc, pageW, pageH, margin);
 
   doc.save(`atmoce-kalkyl-${snow.location.name.toLowerCase()}-${today}.pdf`);
 }
