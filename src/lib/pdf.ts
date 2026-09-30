@@ -65,9 +65,9 @@ function drawNpvChart(
   const { x, y, w, h, years, atmoceSeries, refSeries, atmoceLabel, refLabel, title, takeaway } =
     opts;
 
-  // Outer card — vit med tunn kant, rundade hörn
-  doc.setDrawColor(...GRID);
-  doc.setLineWidth(0.2);
+  // Outer card — vit med svart kant, rundade hörn
+  doc.setDrawColor(...INK);
+  doc.setLineWidth(0.3);
   doc.setFillColor(255, 255, 255);
   doc.roundedRect(x, y, w, h, 1.5, 1.5, "FD");
 
@@ -88,7 +88,7 @@ function drawNpvChart(
   doc.setFontSize(7.5);
   legendItems.forEach((it) => {
     const tw = doc.getTextWidth(it.label);
-    doc.setTextColor(...MUTED);
+    doc.setTextColor(...INK);
     doc.text(it.label, legendX - tw, legendY);
     doc.setFillColor(...it.color);
     doc.rect(legendX - tw - 4.5, legendY - 2.2, 3.5, 1.8, "F");
@@ -123,11 +123,11 @@ function drawNpvChart(
     py: plotY + plotH - ((val - yMin) / (yMax - yMin)) * plotH,
   });
 
-  // Y ticks — ljusa hjälplinjer
+  // Y ticks — hjälplinjer, svart text
   const yTicks = 4;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.setTextColor(...FAINT);
+  doc.setTextColor(...INK);
   doc.setDrawColor(...GRID);
   doc.setLineWidth(0.12);
   for (let i = 0; i <= yTicks; i++) {
@@ -148,10 +148,10 @@ function drawNpvChart(
     doc.setLineDashPattern([], 0);
   }
 
-  // X ticks every 5 years
+  // X ticks — svart text
   doc.setDrawColor(...GRID);
   doc.setLineWidth(0.12);
-  doc.setTextColor(...FAINT);
+  doc.setTextColor(...INK);
   const step = years >= 20 ? 5 : years >= 10 ? 2 : 1;
   for (let yr = 0; yr <= years; yr += step) {
     const { px } = toPx(yr, yMin);
@@ -160,9 +160,9 @@ function drawNpvChart(
     doc.text(String(yr), px, py + 3.6, { align: "center" });
   }
 
-  // Axellinjer — tunna och diskreta
-  doc.setDrawColor(...GRID);
-  doc.setLineWidth(0.25);
+  // Axellinjer — svarta
+  doc.setDrawColor(...INK);
+  doc.setLineWidth(0.3);
   doc.line(plotX, plotY, plotX, plotY + plotH);
   doc.line(plotX, plotY + plotH, plotX + plotW, plotY + plotH);
 
@@ -197,7 +197,7 @@ function drawNpvChart(
   // Takeaway-raden längst ner i kortet
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.setTextColor(...MUTED);
+  doc.setTextColor(...INK);
   doc.text(takeaway, x + 5, y + h - 3);
 }
 
