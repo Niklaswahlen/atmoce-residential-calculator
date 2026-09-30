@@ -400,6 +400,29 @@ function Index() {
     [params.years, refReplacements],
   );
 
+  // --- Atmoce-fördelar (vinnarkort) ---
+  const inverterSavings = refReplacements * INVERTER_REPLACEMENT_COST;
+  const bonusKwhPerYear = kWp * params.yieldPerKwp * (panelBonusPct / 100);
+  const extraKwhPerYear = bonusKwhPerYear + snow.totalRecoveredKwh;
+  const atmoceWarrantyYears =
+    atmoceOption?.warrantyYears ?? atmoce.batteryWarrantyYears ?? null;
+  const atmoceWarrantyCycles =
+    atmoceOption?.warrantyCycles ?? atmoce.batteryWarrantyCycles ?? null;
+  const refWarrantyYears = reference.batteryWarrantyYears ?? null;
+  const refWarrantyCycles = reference.batteryWarrantyCycles ?? null;
+
+  // Applicera en snabbmall: panelantal + rimligt batteri, och låt
+  // referenssystemet automatiskt matcha den nya kapaciteten.
+  const applyPreset = (panels: number, modules: number) => {
+    setParams((p) => ({ ...p, panels }));
+    setAtmoceModulesState(
+      Math.max(atmoceMinModules, Math.min(atmoceMaxModules, modules)),
+    );
+    setRefKwhOverride(null);
+    setAtmocePriceOverride(null);
+    setRefPriceOverride(null);
+  };
+
   const handleGeneratePdf = async () => {
     setPdfLoading(true);
     try {
@@ -471,6 +494,27 @@ function Index() {
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { panels: 10, modules: 1 },
+                    { panels: 15, modules: 2 },
+                    { panels: 20, modules: 2 },
+                  ].map((p) => (
+                    <Button
+                      key={p.panels}
+                      type="button"
+                      size="sm"
+                      variant={params.panels === p.panels ? "default" : "outline"}
+                      className="h-8 px-3 text-xs"
+                      onClick={() => applyPreset(p.panels, p.modules)}
+                    >
+                      {p.panels} {t("paneler", "panels")}
+                      <span className="ml-1 opacity-70">
+                        {fmtNum((p.panels * params.wpPerPanel) / 1000, 1)} kWp
+                      </span>
+                    </Button>
+                  ))}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <NumField
                     label={t("Antal solpaneler", "Number of solar panels")}
@@ -499,7 +543,11 @@ function Index() {
                     </Label>
                     <Select
                       value={atmoceBatteryId ?? ""}
-                      onValueChange={(v) => setAtmoceBatteryConfigId(v)}
+                      onValueChange={(v) => {
+                        setAtmoceBatteryConfigId(v);
+                        // Låt referenssystemet automatiskt matcha nya kapaciteten.
+                        setRefKwhOverride(null);
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -698,6 +746,61 @@ function Index() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Atmoce-fördelar: fyra vinnarkort */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <WinCard
+            label={t("Ekonomisk vinst", "Economic gain")}
+            value={`${extraSavings >= 0 ? "+" : ""}${fmtSek(extraSavings)}`}
+            note={
+              paybackDelta === null
+                ? t(
+                    `mer i plånboken över ${params.years} år`,
+                    `more money over ${params.years} years`,
+                  )
+                : t(
+                    `över ${params.years} år · ${fmtNum(Math.abs(paybackDelta), 1)} år ${paybackDelta >= 0 ? "snabbare" : "långsammare"} återbetalning`,
+                    `over ${params.years} years · payback ${fmtNum(Math.abs(paybackDelta), 1)} yrs ${paybackDelta >= 0 ? "faster" : "slower"}`,
+                  )
+            }
+            positive={extraSavings >= 0}
+          />
+          <WinCard
+            label={t("Inga växelriktarbyten", "No inverter replacements")}
+            value={inverterSavings > 0 ? fmtSek(inverterSavings) : fmtSek(0)}
+            note={t(
+              `sparat: ${refReplacements} byte${refReplacements === 1 ? "" : "n"} för ${reference.short}, 0 för Atmoce`,
+              `saved: ${refReplacements} replacement${refReplacements === 1 ? "" : "s"} for ${reference.short}, 0 for Atmoce`,
+            )}
+            positive={inverterSavings >= 0}
+          />
+          <WinCard
+            label={t("Mer el varje år", "More electricity each year")}
+            value={`+${fmtNum(extraKwhPerYear)} kWh`}
+            note={t(
+              `${fmtNum(bonusKwhPerYear)} kWh paneloptimering + ${fmtNum(snow.totalRecoveredKwh)} kWh snösmältning`,
+              `${fmtNum(bonusKwhPerYear)} kWh panel optimisation + ${fmtNum(snow.totalRecoveredKwh)} kWh snow melting`,
+            )}
+            positive
+          />
+          <WinCard
+            label={t("Batteriets livslängd", "Battery lifetime")}
+            value={
+              atmoceWarrantyCycles
+                ? `${fmtNum(atmoceWarrantyCycles)} ${t("cykler", "cycles")}`
+                : `${atmoceWarrantyYears ?? "—"} ${t("år", "yrs")}`
+            }
+            note={t(
+              `${atmoceWarrantyYears ?? "—"} års garanti · ${reference.short}: ${refWarrantyCycles ? `${fmtNum(refWarrantyCycles)} cykler` : "—"} / ${refWarrantyYears ?? "—"} år`,
+              `${atmoceWarrantyYears ?? "—"} yr warranty · ${reference.short}: ${refWarrantyCycles ? `${fmtNum(refWarrantyCycles)} cycles` : "—"} / ${refWarrantyYears ?? "—"} yrs`,
+            )}
+            positive={
+              (atmoceWarrantyCycles ?? 0) >= (refWarrantyCycles ?? 0) &&
+              (atmoceWarrantyYears ?? 0) >= (refWarrantyYears ?? 0)
+            }
+          />
+        </div>
+
 
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
@@ -1445,6 +1548,34 @@ function Metric({
         {value}
       </div>
     </div>
+  );
+}
+
+function WinCard({
+  label,
+  value,
+  note,
+  positive,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  positive: boolean;
+}) {
+  return (
+    <Card className={positive ? "border-l-4 border-l-atmoce" : "border-l-4"}>
+      <CardContent className="p-4">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </div>
+        <div
+          className={`mt-1 font-mono text-xl font-bold tabular-nums ${positive ? "text-atmoce" : "text-destructive"}`}
+        >
+          {value}
+        </div>
+        <div className="mt-1 text-[11px] leading-snug text-muted-foreground">{note}</div>
+      </CardContent>
+    </Card>
   );
 }
 
