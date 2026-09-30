@@ -154,8 +154,8 @@ function NumField({
     if (!focused) setDraft(formatWithSpaces(next, decimals));
   };
   return (
-    <div className="min-w-0 space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+    <div className="min-w-0 space-y-1">
+      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -167,10 +167,10 @@ function NumField({
           }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
-          className="w-full min-w-0 pr-14 font-mono"
+          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
         />
         {suffix && (
-          <span className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          <span className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
             {suffix}
           </span>
         )}
@@ -178,18 +178,18 @@ function NumField({
           <button
             type="button"
             aria-label={`Öka ${label}`}
-            className="flex h-4 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="flex h-3.5 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={() => stepBy(1)}
           >
-            <ChevronUp className="h-3.5 w-3.5" />
+            <ChevronUp className="h-3 w-3" />
           </button>
           <button
             type="button"
             aria-label={`Minska ${label}`}
-            className="flex h-4 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="flex h-3.5 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={() => stepBy(-1)}
           >
-            <ChevronDown className="h-3.5 w-3.5" />
+            <ChevronDown className="h-3 w-3" />
           </button>
         </div>
       </div>
@@ -574,7 +574,7 @@ function Index() {
                         setRefKwhOverride(null);
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -641,7 +641,7 @@ function Index() {
                       setRefKwhOverride(null);
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1370,8 +1370,8 @@ function PriceField({
     setDraft(formatWithSpaces(Math.round(value)));
   }, [value, focused]);
   return (
-    <div className="min-w-0 space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+    <div className="min-w-0 space-y-1">
+      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -1397,9 +1397,9 @@ function PriceField({
             }
             setDraft(formatWithSpaces(rounded));
           }}
-          className="w-full min-w-0 pr-14 font-mono"
+          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
         />
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
           kr
         </span>
       </div>
@@ -1437,7 +1437,7 @@ function KwhField({
   }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -1463,9 +1463,9 @@ function KwhField({
             }
             setDraft(formatWithSpaces(rounded, 2));
           }}
-          className="w-full min-w-0 pr-14 font-mono"
+          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
         />
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
           kWh
         </span>
       </div>
