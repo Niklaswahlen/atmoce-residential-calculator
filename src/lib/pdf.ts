@@ -624,7 +624,7 @@ export async function generateSummaryPdf(input: PdfInput) {
       refResult.totalProduction > 0 ? prodDiff / refResult.totalProduction : 0;
     const savingsDiff = atmoceResult.totalSavings - refResult.totalSavings;
     const npvGain = atmoceResult.npv - refResult.npv;
-    const activeSnowMonths = snow.months.filter((m) => m.active).length;
+    const activeSnowMonths = snow.rows.filter((m) => m.applied).length;
 
     const usps: { title: string; body: string; proof: string }[] = [
       {
