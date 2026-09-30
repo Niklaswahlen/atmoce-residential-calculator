@@ -15,6 +15,7 @@ const CORAL: [number, number, number] = [237, 106, 74];
 const PLUM: [number, number, number] = [48, 30, 50];
 const MUTED: [number, number, number] = [120, 112, 122];
 const FAINT: [number, number, number] = [168, 160, 172];
+const INK: [number, number, number] = [40, 36, 44];
 const GRID: [number, number, number] = [228, 224, 230];
 const TINT: [number, number, number] = [246, 243, 246];
 const GREEN_FILL: [number, number, number] = [230, 247, 237];
@@ -80,7 +81,7 @@ function drawNpvChart(
   const legendY = y + 7.5;
   let legendX = x + w - 5;
   const legendItems: { label: string; color: [number, number, number] }[] = [
-    { label: refLabel, color: FAINT },
+    { label: refLabel, color: INK },
     { label: atmoceLabel, color: CORAL },
   ];
   doc.setFont("helvetica", "normal");
@@ -190,7 +191,7 @@ function drawNpvChart(
     }
   };
 
-  drawSeries(refSeries, FAINT, 0.5, false);
+  drawSeries(refSeries, INK, 0.7, false);
   drawSeries(atmoceSeries, CORAL, 0.9, true);
 
   // Takeaway-raden längst ner i kortet
