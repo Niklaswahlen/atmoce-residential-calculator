@@ -619,36 +619,61 @@ export async function generateSummaryPdf(input: PdfInput) {
     doc.text("Varför Atmoce?", margin, cursorY + 3);
     cursorY += 8;
 
-    const usps: { title: string; body: string }[] = [
+    const prodDiff = atmoceResult.totalProduction - refResult.totalProduction;
+    const prodPct =
+      refResult.totalProduction > 0 ? prodDiff / refResult.totalProduction : 0;
+    const savingsDiff = atmoceResult.totalSavings - refResult.totalSavings;
+    const npvGain = atmoceResult.npv - refResult.npv;
+    const activeSnowMonths = snow.rows.filter((m) => m.applied).length;
+
+    const usps: { title: string; body: string; proof: string }[] = [
       {
-        title: "25 års produktgaranti",
-        body: "Noll växelriktarbyten under kalkyltiden.",
+        title: `${atmoce.inverterWarrantyYears} års produktgaranti`,
+        body: `Mot ${reference.inverterWarrantyYears} år för ${reference.name}.`,
+        proof:
+          refResult.replacementYears.length > 0
+            ? `Sparar ${fmtSek(refResult.totalReplacementCost)} i ${refResult.replacementYears.length} växelriktarbyten (år ${refResult.replacementYears.join(", ")}).`
+            : `Noll växelriktarbyten under ${years} år.`,
       },
       {
-        title: "+8 % årsproduktion",
+        title:
+          prodDiff > 0
+            ? `+${fmtPct(prodPct, 1)} mer producerad el`
+            : "Panelnivå-MPPT",
         body: "Panelnivå-MPPT eliminerar skuggförluster.",
+        proof:
+          prodDiff > 0
+            ? `+${fmtNum(prodDiff)} kWh över ${years} år jämfört med ${reference.name}.`
+            : `${fmtNum(atmoceResult.totalProduction)} kWh över ${years} år.`,
       },
       {
         title: "Panelnivå-övervakning",
         body: "Fel upptäcks samma dag, inte efter månader.",
+        proof: `Varje panel mäts separat — ${panels} mätpunkter i denna anläggning.`,
       },
       {
         title: "Säkrare på taket",
         body: "Lågspänd AC per panel — ingen högspänd DC.",
+        proof: `Ingen DC-sträng på ${fmtNum((panels * wpPerPanel) / 1000, 2)} kWp över taket.`,
       },
       {
         title: "Snösmältning",
-        body: "Valbart vintertid — håller panelerna snöfria.",
+        body: `${MODE_LABEL[snowMode]} i ${snow.location.name}.`,
+        proof:
+          snow.totalRecoveredKwh > 0
+            ? `+${fmtNum(snow.totalRecoveredKwh)} kWh/år (${fmtSek(snow.totalNetBenefit)}/år netto) under ${activeSnowMonths} månader.`
+            : "Valbart vintertid — håller panelerna snöfria.",
       },
       {
-        title: "Skalbart & enkelt",
-        body: "Lägg till paneler utan att byta central inverter.",
+        title: "Bättre totalekonomi",
+        body: `Högre nuvärde än ${reference.name}.`,
+        proof: `${npvGain >= 0 ? "+" : ""}${fmtSek(npvGain)} i nuvärde och ${savingsDiff >= 0 ? "+" : ""}${fmtSek(savingsDiff)} i besparing över ${years} år.`,
       },
     ];
 
-    const cardH = 19;
+    const cardH = 22;
     const colGap = 4;
-    const rowGap = 6;
+    const rowGap = 5;
     const colW = (pageW - 2 * margin - colGap) / 2;
 
     usps.forEach((u, i) => {
@@ -676,7 +701,14 @@ export async function generateSummaryPdf(input: PdfInput) {
       doc.setTextColor(...MUTED);
       const wrapped = doc.splitTextToSize(u.body, colW - 16);
       doc.text(wrapped, x + 12, y + 10.4);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(...PLUM);
+      const proofWrapped = doc.splitTextToSize(u.proof, colW - 16).slice(0, 2);
+      doc.text(proofWrapped, x + 12, y + 15.6);
     });
+
   }
 
   drawFooter(doc, pageW, pageH, margin);
