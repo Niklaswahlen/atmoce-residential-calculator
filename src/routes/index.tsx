@@ -930,6 +930,18 @@ function Index() {
 
           {/* Results */}
           <section className="space-y-6">
+            <div className="flex justify-end">
+              <PdfButton
+                onClick={handleGeneratePdf}
+                loading={pdfLoading}
+                label={
+                  pdfLoading
+                    ? t("Genererar…", "Generating…")
+                    : t("Sammanfattning som PDF", "Summary as PDF")
+                }
+              />
+            </div>
+
             {/* Side-by-side metric cards */}
             <div className="grid gap-4 md:grid-cols-2">
               <SystemCard
@@ -1089,22 +1101,9 @@ function Index() {
             {!isSimple && (
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle>
-                    {t(`Ackumulerat nuvärde över ${params.years} år`, `Cumulative present value over ${params.years} years`)}
-                  </CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGeneratePdf}
-                    disabled={pdfLoading}
-                  >
-                    <Download className="mr-1.5" />
-                    {pdfLoading
-                      ? t("Genererar…", "Generating…")
-                      : t("Sammanfattning som PDF", "Summary as PDF")}
-                  </Button>
-                </div>
+                <CardTitle>
+                  {t(`Ackumulerat nuvärde över ${params.years} år`, `Cumulative present value over ${params.years} years`)}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div ref={npvChartRef} className="h-80 w-full bg-card">
@@ -1334,6 +1333,18 @@ function Index() {
               </CardContent>
             </Card>
             )}
+
+            <div className="flex justify-end">
+              <PdfButton
+                onClick={handleGeneratePdf}
+                loading={pdfLoading}
+                label={
+                  pdfLoading
+                    ? t("Genererar…", "Generating…")
+                    : t("Sammanfattning som PDF", "Summary as PDF")
+                }
+              />
+            </div>
 
             {!isSimple && (
             <p className="text-xs text-muted-foreground">
@@ -1575,6 +1586,23 @@ function Metric({
         {value}
       </div>
     </div>
+  );
+}
+
+function PdfButton({
+  onClick,
+  loading,
+  label,
+}: {
+  onClick: () => void;
+  loading: boolean;
+  label: string;
+}) {
+  return (
+    <Button variant="outline" size="sm" onClick={onClick} disabled={loading}>
+      <Download className="mr-1.5" />
+      {label}
+    </Button>
   );
 }
 
