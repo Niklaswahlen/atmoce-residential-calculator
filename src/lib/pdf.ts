@@ -422,7 +422,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     bodyStyles: {
       fontSize: 8,
       textColor: PLUM,
-      cellPadding: { top: 1.3, bottom: 1.3, left: 0.5, right: 1.5 },
+      cellPadding: { top: 1.8, bottom: 1.8, left: 0.5, right: 1.5 },
     },
     columnStyles: {
       0: { fontStyle: "bold", cellWidth: 48 },
@@ -467,7 +467,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     },
   });
   // @ts-expect-error - autoTable adds lastAutoTable
-  cursorY = (doc.lastAutoTable?.finalY ?? cursorY) + 4.5;
+  cursorY = (doc.lastAutoTable?.finalY ?? cursorY) + 5;
 
   // ---- Resultat-kort: mörkt plum, rundade hörn ----
   {
@@ -483,11 +483,13 @@ export async function generateSummaryPdf(input: PdfInput) {
     doc.text("RESULTAT", margin + 5, cursorY + 4.6, { charSpace: 0.35 });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10.5);
-    doc.text(`${atmoce.name} ${atmoceWins} – ${refWins} ${reference.name}`, margin + 5, cursorY + 10.2);
+    const scoreText = `${atmoce.name} ${atmoceWins} – ${refWins} ${reference.name}`;
+    doc.text(scoreText, margin + 5, cursorY + 10.2);
+    const scoreW = doc.getTextWidth(scoreText);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(210, 200, 212);
-    doc.text(`(oavgjort ${ties})`, margin + 5 + doc.getTextWidth(`${atmoce.name} ${atmoceWins} – ${refWins} ${reference.name}`) + 1.6, cursorY + 10.2);
+    doc.text(`(oavgjort ${ties})`, margin + 5 + scoreW + 1.6, cursorY + 10.2);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.3);
@@ -496,16 +498,16 @@ export async function generateSummaryPdf(input: PdfInput) {
     const snowLine2 = `Nettovinst ${fmtSek(snow.totalNetBenefit)}/år`;
     doc.text(snowLine1, pageW - margin - 4, cursorY + 6.2, { align: "right" });
     doc.text(snowLine2, pageW - margin - 4, cursorY + 10.4, { align: "right" });
-    cursorY += stripH + 4.5;
+    cursorY += stripH + 5;
   }
 
   // ---- NPV-graf: kompakt kort ----
   {
     const availW = pageW - 2 * margin;
     // USP-rutnät: 3 rader × 13 mm + 2 gap × 2.5 mm + rubrik + sidfot
-    const uspBlockH = 3 * 13 + 2 * 2.5 + 4;
+    const uspBlockH = 3 * 14 + 2 * 3.5 + 4;
     const footerSpace = 9;
-    const chartH = Math.min(62, Math.max(44, pageH - cursorY - uspBlockH - footerSpace - 6));
+    const chartH = Math.min(76, Math.max(44, pageH - cursorY - uspBlockH - footerSpace - 7));
     const atmoceSeries = [
       -atmoceResult.investment,
       ...atmoceResult.rows.map((r) => r.cumulativeNpv),
@@ -564,9 +566,9 @@ export async function generateSummaryPdf(input: PdfInput) {
       },
     ];
 
-    const cardH = 13;
+    const cardH = 14;
     const colGap = 3;
-    const rowGap = 2.5;
+    const rowGap = 3.5;
     const colW = (pageW - 2 * margin - colGap) / 2;
 
     usps.forEach((u, i) => {
