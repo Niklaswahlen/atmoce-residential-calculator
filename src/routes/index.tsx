@@ -53,7 +53,7 @@ import {
 import { calculateSnowMelt } from "@/lib/snowmelt";
 import { PanelLevelBonusCard } from "@/components/PanelLevelBonusCard";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { ChevronDown, ChevronUp, Download } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
 import { useApp, useT } from "@/lib/app-context";
@@ -146,6 +146,13 @@ function NumField({
     onChange(out);
     setDraft(formatWithSpaces(out, decimals));
   };
+  const stepBy = (dir: 1 | -1) => {
+    let next = value + dir * step;
+    if (editable) next = Math.round(next);
+    if (min !== undefined) next = Math.max(min, next);
+    onChange(next);
+    if (!focused) setDraft(formatWithSpaces(next, decimals));
+  };
   return (
     <div className="min-w-0 space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
@@ -160,13 +167,31 @@ function NumField({
           }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
-          className={suffix ? "w-full min-w-0 pr-12 font-mono" : "w-full min-w-0 font-mono"}
+          className="w-full min-w-0 pr-14 font-mono"
         />
         {suffix && (
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          <span className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
             {suffix}
           </span>
         )}
+        <div className="absolute right-1 top-1/2 flex -translate-y-1/2 flex-col">
+          <button
+            type="button"
+            aria-label={`Öka ${label}`}
+            className="flex h-4 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={() => stepBy(1)}
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label={`Minska ${label}`}
+            className="flex h-4 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={() => stepBy(-1)}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
