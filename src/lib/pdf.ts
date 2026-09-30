@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { fmtNum, fmtPct, fmtSek, type CalcResult } from "@/lib/calc";
 
 /** fmtSek men med minus (U+2212) ersatt — helvetica saknar det tecknet i PDF:en. */
-const sek = (n: number) => sek(n).replace(/\u2212/g, "-");
+const sek = (n: number): string => fmtSek(n).replace(/\u2212/g, "-");
 import type { SystemSpec } from "@/data/systems";
 import type { SnowMeltResult, SnowMeltMode } from "@/lib/snowmelt";
 
