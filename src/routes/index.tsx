@@ -504,18 +504,18 @@ function Index() {
         }
       />
 
-      <main className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-5">
         {/* Snabb-override: paneler + faktiska offertpriser */}
-        <Card className="mb-6 border-l-4 border-l-atmoce">
-          <CardHeader className="pb-3">
+        <Card className="mb-4 border-l-4 border-l-atmoce">
+          <CardHeader className="pb-1 pt-4">
             <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
               {t("Dina siffror", "Your numbers")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 lg:grid-cols-3">
+          <CardContent className="pb-4">
+            <div className="grid gap-4 lg:grid-cols-3">
               {/* Kolumn 1: Anläggning + Atmoce batteri */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
@@ -625,7 +625,7 @@ function Index() {
               </div>
 
               {/* Kolumn 2: Annat system */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Annat system (referens)", "Other system (reference)")}
                 </div>
@@ -718,7 +718,7 @@ function Index() {
               </div>
 
               {/* Kolumn 3: Priser */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Priser", "Prices")}
                 </div>
