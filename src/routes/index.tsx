@@ -1334,6 +1334,18 @@ function Index() {
             </Card>
             )}
 
+            <div className="flex justify-end">
+              <PdfButton
+                onClick={handleGeneratePdf}
+                loading={pdfLoading}
+                label={
+                  pdfLoading
+                    ? t("Genererar…", "Generating…")
+                    : t("Sammanfattning som PDF", "Summary as PDF")
+                }
+              />
+            </div>
+
             {!isSimple && (
             <p className="text-xs text-muted-foreground">
               {t(
