@@ -513,7 +513,7 @@ function Index() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pb-4">
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-4 lg:grid-cols-2">
               {/* Kolumn 1: Anläggning + Atmoce batteri */}
               <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -622,6 +622,21 @@ function Index() {
                   <span className="text-muted-foreground">↔</span>{" "}
                   {reference.short} <b>{fmtNum(reference.batteryKwh, 1)} kWh</b>
                 </div>
+                <div className="rounded-md border border-atmoce/40 bg-atmoce/5 px-2.5 py-2">
+                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-atmoce">
+                    {t("Atmoce", "Atmoce")}
+                  </div>
+                  <PriceField
+                    label={t(
+                      "Kostnad (ink moms, efter GTA)",
+                      "Cost (incl. VAT, after GTA)",
+                    )}
+                    value={atmocePriceEffective}
+                    estimated={atmoceEstimated}
+                    isOverride={atmocePriceOverride !== null}
+                    onChange={(n) => setAtmocePriceOverride(n)}
+                  />
+                </div>
               </div>
 
               {/* Kolumn 2: Annat system */}
@@ -715,40 +730,27 @@ function Index() {
                     </div>
                   </>
                 )}
-              </div>
-
-              {/* Kolumn 3: Priser */}
-              <div className="space-y-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {t("Priser", "Prices")}
+                <div className="rounded-md border bg-muted/50 px-2.5 py-2">
+                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {reference.short}
+                  </div>
+                  <PriceField
+                    label={t("Kostnad (ink GTA)", "Cost (incl. GTA)")}
+                    value={refPriceEffective}
+                    estimated={refEstimated}
+                    isOverride={isCustomRef ? true : refPriceOverride !== null}
+                    hideEstimate={isCustomRef}
+                    onChange={(n) => {
+                      if (isCustomRef) {
+                        if (n !== null) setCustomPrice(n);
+                      } else {
+                        setRefPriceOverride(n);
+                      }
+                    }}
+                  />
                 </div>
-                <PriceField
-                  label={t(
-                    "Kostnad Atmoce (ink moms, efter GTA)",
-                    "Atmoce cost (incl. VAT, after GTA)",
-                  )}
-                  value={atmocePriceEffective}
-                  estimated={atmoceEstimated}
-                  isOverride={atmocePriceOverride !== null}
-                  onChange={(n) => setAtmocePriceOverride(n)}
-                />
-                <PriceField
-                  label={t(
-                    "Kostnad annat system (ink GTA)",
-                    "Other system cost (incl. GTA)",
-                  )}
-                  value={refPriceEffective}
-                  estimated={refEstimated}
-                  isOverride={isCustomRef ? true : refPriceOverride !== null}
-                  hideEstimate={isCustomRef}
-                  onChange={(n) => {
-                    if (isCustomRef) {
-                      if (n !== null) setCustomPrice(n);
-                    } else {
-                      setRefPriceOverride(n);
-                    }
-                  }}
-                />
+              </div>
+              <div className="lg:col-span-2">
                 <Button
                   type="button"
                   variant="outline"
