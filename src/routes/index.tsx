@@ -747,6 +747,61 @@ function Index() {
           </CardContent>
         </Card>
 
+        {/* Atmoce-fördelar: fyra vinnarkort */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <WinCard
+            label={t("Ekonomisk vinst", "Economic gain")}
+            value={`${extraSavings >= 0 ? "+" : ""}${fmtSek(extraSavings)}`}
+            note={
+              paybackDelta === null
+                ? t(
+                    `mer i plånboken över ${params.years} år`,
+                    `more money over ${params.years} years`,
+                  )
+                : t(
+                    `över ${params.years} år · ${fmtNum(Math.abs(paybackDelta), 1)} år ${paybackDelta >= 0 ? "snabbare" : "långsammare"} återbetalning`,
+                    `over ${params.years} years · payback ${fmtNum(Math.abs(paybackDelta), 1)} yrs ${paybackDelta >= 0 ? "faster" : "slower"}`,
+                  )
+            }
+            positive={extraSavings >= 0}
+          />
+          <WinCard
+            label={t("Inga växelriktarbyten", "No inverter replacements")}
+            value={inverterSavings > 0 ? fmtSek(inverterSavings) : fmtSek(0)}
+            note={t(
+              `sparat: ${refReplacements} byte${refReplacements === 1 ? "" : "n"} för ${reference.short}, 0 för Atmoce`,
+              `saved: ${refReplacements} replacement${refReplacements === 1 ? "" : "s"} for ${reference.short}, 0 for Atmoce`,
+            )}
+            positive={inverterSavings >= 0}
+          />
+          <WinCard
+            label={t("Mer el varje år", "More electricity each year")}
+            value={`+${fmtNum(extraKwhPerYear)} kWh`}
+            note={t(
+              `${fmtNum(bonusKwhPerYear)} kWh paneloptimering + ${fmtNum(snow.totalRecoveredKwh)} kWh snösmältning`,
+              `${fmtNum(bonusKwhPerYear)} kWh panel optimisation + ${fmtNum(snow.totalRecoveredKwh)} kWh snow melting`,
+            )}
+            positive
+          />
+          <WinCard
+            label={t("Batteriets livslängd", "Battery lifetime")}
+            value={
+              atmoceWarrantyCycles
+                ? `${fmtNum(atmoceWarrantyCycles)} ${t("cykler", "cycles")}`
+                : `${atmoceWarrantyYears ?? "—"} ${t("år", "yrs")}`
+            }
+            note={t(
+              `${atmoceWarrantyYears ?? "—"} års garanti · ${reference.short}: ${refWarrantyCycles ? `${fmtNum(refWarrantyCycles)} cykler` : "—"} / ${refWarrantyYears ?? "—"} år`,
+              `${atmoceWarrantyYears ?? "—"} yr warranty · ${reference.short}: ${refWarrantyCycles ? `${fmtNum(refWarrantyCycles)} cycles` : "—"} / ${refWarrantyYears ?? "—"} yrs`,
+            )}
+            positive={
+              (atmoceWarrantyCycles ?? 0) >= (refWarrantyCycles ?? 0) &&
+              (atmoceWarrantyYears ?? 0) >= (refWarrantyYears ?? 0)
+            }
+          />
+        </div>
+
+
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           {/* Input panel */}
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
