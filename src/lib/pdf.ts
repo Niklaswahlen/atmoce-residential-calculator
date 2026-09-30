@@ -467,8 +467,8 @@ export async function generateSummaryPdf(input: PdfInput) {
 
   autoTable(doc, {
     startY: cursorY,
-    head: [["Nyckeltal", atmoce.name, reference.name, "Skillnad"]],
-    body: rows.map((r) => [r.label, r.a, r.b, r.delta ?? ""]),
+    head: [["Nyckeltal", atmoce.name, reference.name]],
+    body: rows.map((r) => [r.label, r.a, r.b]),
     theme: "plain",
     headStyles: {
       fillColor: [255, 255, 255],
@@ -486,7 +486,6 @@ export async function generateSummaryPdf(input: PdfInput) {
       0: { fontStyle: "bold", cellWidth: 50 },
       1: { halign: "right" },
       2: { halign: "right" },
-      3: { halign: "right", textColor: MUTED, fontSize: 7.5, cellWidth: 36 },
     },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
