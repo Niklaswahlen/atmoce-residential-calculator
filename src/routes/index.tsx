@@ -1370,8 +1370,8 @@ function PriceField({
     setDraft(formatWithSpaces(Math.round(value)));
   }, [value, focused]);
   return (
-    <div className="min-w-0 space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+    <div className="min-w-0 space-y-1">
+      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -1397,7 +1397,7 @@ function PriceField({
             }
             setDraft(formatWithSpaces(rounded));
           }}
-          className="w-full min-w-0 pr-14 font-mono"
+          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
         />
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
           kr
@@ -1437,7 +1437,7 @@ function KwhField({
   }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -1463,9 +1463,9 @@ function KwhField({
             }
             setDraft(formatWithSpaces(rounded, 2));
           }}
-          className="w-full min-w-0 pr-14 font-mono"
+          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
         />
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
           kWh
         </span>
       </div>
