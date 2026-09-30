@@ -315,7 +315,7 @@ export async function generateSummaryPdf(input: PdfInput) {
       undefined,
       9,
     );
-    cursorY += boxH + 8;
+    cursorY += boxH + 12;
   }
 
   // ---- Jämförelsetabell: tunna hjälplinjer, ingen yttre grid ----
@@ -480,7 +480,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     bodyStyles: {
       fontSize: 8.5,
       textColor: PLUM,
-      cellPadding: { top: 2.9, bottom: 2.9, left: 0.5, right: 1.5 },
+      cellPadding: { top: 3.6, bottom: 3.6, left: 0.5, right: 1.5 },
     },
     columnStyles: {
       0: { fontStyle: "bold", cellWidth: 50 },
@@ -525,7 +525,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     },
   });
   // @ts-expect-error - autoTable adds lastAutoTable
-  cursorY = (doc.lastAutoTable?.finalY ?? cursorY) + 8;
+  cursorY = (doc.lastAutoTable?.finalY ?? cursorY) + 12;
 
   // ---- Resultat-kort: mörkt plum, rundade hörn ----
   {
@@ -581,7 +581,7 @@ export async function generateSummaryPdf(input: PdfInput) {
   // ---- NPV-graf: större kort ----
   {
     const availW = pageW - 2 * margin;
-    const chartH = 96;
+    const chartH = 108;
     const atmoceSeries = [
       -atmoceResult.investment,
       ...atmoceResult.rows.map((r) => r.cumulativeNpv),
@@ -608,7 +608,7 @@ export async function generateSummaryPdf(input: PdfInput) {
       title: `Ackumulerat nuvärde över ${years} år (kr)`,
       takeaway,
     });
-    cursorY += chartH + 10;
+    cursorY += chartH + 14;
   }
 
   // ---- USP: 2×3-rutnät av ljusa kort ----
@@ -646,9 +646,9 @@ export async function generateSummaryPdf(input: PdfInput) {
       },
     ];
 
-    const cardH = 17;
+    const cardH = 19;
     const colGap = 4;
-    const rowGap = 4.5;
+    const rowGap = 6;
     const colW = (pageW - 2 * margin - colGap) / 2;
 
     usps.forEach((u, i) => {
