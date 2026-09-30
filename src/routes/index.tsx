@@ -1589,6 +1589,23 @@ function Metric({
   );
 }
 
+function PdfButton({
+  onClick,
+  loading,
+  label,
+}: {
+  onClick: () => void;
+  loading: boolean;
+  label: string;
+}) {
+  return (
+    <Button variant="outline" size="sm" onClick={onClick} disabled={loading}>
+      <Download className="mr-1.5" />
+      {label}
+    </Button>
+  );
+}
+
 function WinCard({
   label,
   value,
