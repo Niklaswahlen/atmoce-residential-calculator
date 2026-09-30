@@ -1,6 +1,9 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fmtNum, fmtPct, fmtSek, type CalcResult } from "@/lib/calc";
+
+/** fmtSek men med minus (U+2212) ersatt — helvetica saknar det tecknet i PDF:en. */
+const sek = (n: number): string => fmtSek(n).replace(/\u2212/g, "-");
 import type { SystemSpec } from "@/data/systems";
 import type { SnowMeltResult, SnowMeltMode } from "@/lib/snowmelt";
 
@@ -65,9 +68,9 @@ function drawNpvChart(
   const { x, y, w, h, years, atmoceSeries, refSeries, atmoceLabel, refLabel, title, takeaway } =
     opts;
 
-  // Outer card — vit med tunn kant, rundade hörn
-  doc.setDrawColor(...GRID);
-  doc.setLineWidth(0.2);
+  // Outer card — vit med svart kant, rundade hörn
+  doc.setDrawColor(...INK);
+  doc.setLineWidth(0.3);
   doc.setFillColor(255, 255, 255);
   doc.roundedRect(x, y, w, h, 1.5, 1.5, "FD");
 
@@ -88,7 +91,7 @@ function drawNpvChart(
   doc.setFontSize(7.5);
   legendItems.forEach((it) => {
     const tw = doc.getTextWidth(it.label);
-    doc.setTextColor(...MUTED);
+    doc.setTextColor(...INK);
     doc.text(it.label, legendX - tw, legendY);
     doc.setFillColor(...it.color);
     doc.rect(legendX - tw - 4.5, legendY - 2.2, 3.5, 1.8, "F");
@@ -123,11 +126,11 @@ function drawNpvChart(
     py: plotY + plotH - ((val - yMin) / (yMax - yMin)) * plotH,
   });
 
-  // Y ticks — ljusa hjälplinjer
+  // Y ticks — hjälplinjer, svart text
   const yTicks = 4;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.setTextColor(...FAINT);
+  doc.setTextColor(...INK);
   doc.setDrawColor(...GRID);
   doc.setLineWidth(0.12);
   for (let i = 0; i <= yTicks; i++) {
@@ -148,10 +151,10 @@ function drawNpvChart(
     doc.setLineDashPattern([], 0);
   }
 
-  // X ticks every 5 years
+  // X ticks — svart text
   doc.setDrawColor(...GRID);
   doc.setLineWidth(0.12);
-  doc.setTextColor(...FAINT);
+  doc.setTextColor(...INK);
   const step = years >= 20 ? 5 : years >= 10 ? 2 : 1;
   for (let yr = 0; yr <= years; yr += step) {
     const { px } = toPx(yr, yMin);
@@ -160,9 +163,9 @@ function drawNpvChart(
     doc.text(String(yr), px, py + 3.6, { align: "center" });
   }
 
-  // Axellinjer — tunna och diskreta
-  doc.setDrawColor(...GRID);
-  doc.setLineWidth(0.25);
+  // Axellinjer — svarta
+  doc.setDrawColor(...INK);
+  doc.setLineWidth(0.3);
   doc.line(plotX, plotY, plotX, plotY + plotH);
   doc.line(plotX, plotY + plotH, plotX + plotW, plotY + plotH);
 
@@ -197,7 +200,7 @@ function drawNpvChart(
   // Takeaway-raden längst ner i kortet
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.setTextColor(...MUTED);
+  doc.setTextColor(...INK);
   doc.text(takeaway, x + 5, y + h - 3);
 }
 
@@ -358,10 +361,10 @@ export async function generateSummaryPdf(input: PdfInput) {
   const rows: Cmp[] = [
     {
       label: "Investering",
-      a: fmtSek(atmoceResult.investment),
-      b: fmtSek(refResult.investment),
+      a: sek(atmoceResult.investment),
+      b: sek(refResult.investment),
       winner: cmpLower(atmoceResult.investment, refResult.investment),
-      delta: fmtSek(Math.abs(atmoceResult.investment - refResult.investment)),
+      delta: sek(Math.abs(atmoceResult.investment - refResult.investment)),
     },
     {
       label: "Payback",
@@ -385,10 +388,10 @@ export async function generateSummaryPdf(input: PdfInput) {
     },
     {
       label: `NPV (${years} år)`,
-      a: fmtSek(atmoceResult.npv),
-      b: fmtSek(refResult.npv),
+      a: sek(atmoceResult.npv),
+      b: sek(refResult.npv),
       winner: cmpHigher(atmoceResult.npv, refResult.npv),
-      delta: fmtSek(Math.abs(atmoceResult.npv - refResult.npv)),
+      delta: sek(Math.abs(atmoceResult.npv - refResult.npv)),
       key: true,
     },
     {
@@ -406,10 +409,10 @@ export async function generateSummaryPdf(input: PdfInput) {
     },
     {
       label: "Total besparing",
-      a: fmtSek(atmoceResult.totalSavings),
-      b: fmtSek(refResult.totalSavings),
+      a: sek(atmoceResult.totalSavings),
+      b: sek(refResult.totalSavings),
       winner: cmpHigher(atmoceResult.totalSavings, refResult.totalSavings),
-      delta: fmtSek(Math.abs(atmoceResult.totalSavings - refResult.totalSavings)),
+      delta: sek(Math.abs(atmoceResult.totalSavings - refResult.totalSavings)),
     },
     {
       label: "Batteristorlek",
@@ -434,7 +437,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     {
       label: "Växelriktarbyten",
       a: "0 byten",
-      b: `${refResult.replacementYears.length} byten (${fmtSek(refResult.totalReplacementCost)})`,
+      b: `${refResult.replacementYears.length} byten (${sek(refResult.totalReplacementCost)})`,
       winner: refResult.replacementYears.length === 0 ? "tie" : "a",
     },
     {
@@ -553,7 +556,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     doc.setFontSize(7.8);
     doc.setTextColor(220, 212, 222);
     const snowLine1 = `Snösmältning ${snow.location.name} (${MODE_LABEL[snowMode]}): +${fmtNum(snow.totalRecoveredKwh)} kWh/år`;
-    const snowLine2 = `Nettovinst ${fmtSek(snow.totalNetBenefit)}/år`;
+    const snowLine2 = `Nettovinst ${sek(snow.totalNetBenefit)}/år`;
     doc.text(snowLine1, pageW - margin - 5, cursorY + 7.4, { align: "right" });
     doc.text(snowLine2, pageW - margin - 5, cursorY + 12.2, { align: "right" });
   }
@@ -593,8 +596,8 @@ export async function generateSummaryPdf(input: PdfInput) {
     const npvDiff = atmoceResult.npv - refResult.npv;
     const takeaway =
       npvDiff >= 0
-        ? `Du är ${fmtSek(npvDiff)} bättre med ${atmoce.name} efter ${years} år`
-        : `Nuvärdet är ${fmtSek(Math.abs(npvDiff))} lägre med ${atmoce.name} efter ${years} år`;
+        ? `Du är ${sek(npvDiff)} bättre med ${atmoce.name} efter ${years} år`
+        : `Nuvärdet är ${sek(Math.abs(npvDiff))} lägre med ${atmoce.name} efter ${years} år`;
     drawNpvChart(doc, {
       x: margin,
       y: cursorY,
@@ -632,7 +635,7 @@ export async function generateSummaryPdf(input: PdfInput) {
         body: `Mot ${reference.inverterWarrantyYears} år för ${reference.name}.`,
         proof:
           refResult.replacementYears.length > 0
-            ? `Sparar ${fmtSek(refResult.totalReplacementCost)} i ${refResult.replacementYears.length} växelriktarbyten (år ${refResult.replacementYears.join(", ")}).`
+            ? `Sparar ${sek(refResult.totalReplacementCost)} i ${refResult.replacementYears.length} växelriktarbyten (år ${refResult.replacementYears.join(", ")}).`
             : `Noll växelriktarbyten under ${years} år.`,
       },
       {
@@ -661,13 +664,13 @@ export async function generateSummaryPdf(input: PdfInput) {
         body: `${MODE_LABEL[snowMode]} i ${snow.location.name}.`,
         proof:
           snow.totalRecoveredKwh > 0
-            ? `+${fmtNum(snow.totalRecoveredKwh)} kWh/år (${fmtSek(snow.totalNetBenefit)}/år netto) under ${activeSnowMonths} månader.`
+            ? `+${fmtNum(snow.totalRecoveredKwh)} kWh/år (${sek(snow.totalNetBenefit)}/år netto) under ${activeSnowMonths} månader.`
             : "Valbart vintertid — håller panelerna snöfria.",
       },
       {
         title: "Bättre totalekonomi",
         body: `Högre nuvärde än ${reference.name}.`,
-        proof: `${npvGain >= 0 ? "+" : ""}${fmtSek(npvGain)} i nuvärde och ${savingsDiff >= 0 ? "+" : ""}${fmtSek(savingsDiff)} i besparing över ${years} år.`,
+        proof: `${npvGain >= 0 ? "+" : ""}${sek(npvGain)} i nuvärde och ${savingsDiff >= 0 ? "+" : ""}${sek(savingsDiff)} i besparing över ${years} år.`,
       },
     ];
 
