@@ -1551,6 +1551,34 @@ function Metric({
   );
 }
 
+function WinCard({
+  label,
+  value,
+  note,
+  positive,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  positive: boolean;
+}) {
+  return (
+    <Card className={positive ? "border-l-4 border-l-atmoce" : "border-l-4"}>
+      <CardContent className="p-4">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </div>
+        <div
+          className={`mt-1 font-mono text-xl font-bold tabular-nums ${positive ? "text-atmoce" : "text-destructive"}`}
+        >
+          {value}
+        </div>
+        <div className="mt-1 text-[11px] leading-snug text-muted-foreground">{note}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function DeltaItem({
   label,
   value,
