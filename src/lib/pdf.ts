@@ -532,7 +532,7 @@ export async function generateSummaryPdf(input: PdfInput) {
 
   // ---- Resultat-kort: sammanfattning av jämförelsetabellen ----
   {
-    const stripH = 24;
+    const stripH = 36;
     const cardW = pageW - 2 * margin;
     doc.setFillColor(...PLUM);
     doc.roundedRect(margin, cursorY, cardW, stripH, 1.8, 1.8, "F");
@@ -552,7 +552,7 @@ export async function generateSummaryPdf(input: PdfInput) {
       : `${reference.name} vinner ${refWins} av ${total} nyckeltal`;
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text(headline, leftX, cursorY + 13);
+    doc.text(headline, leftX, cursorY + 12.5);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
@@ -560,7 +560,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     const sub = winnerIsAtmoce
       ? `${reference.name}: ${refWins}  ·  Oavgjort: ${ties}`
       : `${atmoce.name}: ${atmoceWins}  ·  Oavgjort: ${ties}`;
-    doc.text(sub, leftX, cursorY + 18.5);
+    doc.text(sub, margin + cardW - 5, cursorY + 12.5, { align: "right" });
 
     // Tre nyckeltal till höger
     const npvD = atmoceResult.npv - refResult.npv;
@@ -580,22 +580,26 @@ export async function generateSummaryPdf(input: PdfInput) {
         value: `+${fmtNum(snow.totalRecoveredKwh)} kWh · ${sek(snow.totalNetBenefit)}/år`,
       },
     ];
-    const statW = 38;
-    let sx = margin + cardW - 4 - statW * stats.length;
+    const statW = (cardW - 10) / stats.length;
+    let sx = leftX - 1;
+    const sy = cursorY + 14;
+    doc.setDrawColor(90, 70, 92);
+    doc.setLineWidth(0.2);
+    doc.line(leftX, cursorY + 22.5, margin + cardW - 5, cursorY + 22.5);
     stats.forEach((s, i) => {
       if (i > 0) {
         doc.setDrawColor(90, 70, 92);
         doc.setLineWidth(0.2);
-        doc.line(sx - 2, cursorY + 5, sx - 2, cursorY + stripH - 5);
+        doc.line(sx - 2, sy + 11, sx - 2, sy + 19);
       }
       doc.setFont("helvetica", "normal");
       doc.setFontSize(6.3);
       doc.setTextColor(200, 190, 202);
-      doc.text(s.label, sx + 1, cursorY + 9.5, { maxWidth: statW - 3 });
+      doc.text(s.label.toUpperCase(), sx + 1, sy + 13.5, { charSpace: 0.25 });
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8.5);
+      doc.setFontSize(10);
       doc.setTextColor(255, 255, 255);
-      doc.text(doc.splitTextToSize(s.value, statW - 3), sx + 1, cursorY + 15);
+      doc.text(s.value, sx + 1, sy + 18.5);
       sx += statW;
     });
   }
