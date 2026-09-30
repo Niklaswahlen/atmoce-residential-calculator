@@ -494,6 +494,27 @@ function Index() {
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { panels: 10, modules: 1 },
+                    { panels: 15, modules: 2 },
+                    { panels: 20, modules: 2 },
+                  ].map((p) => (
+                    <Button
+                      key={p.panels}
+                      type="button"
+                      size="sm"
+                      variant={params.panels === p.panels ? "default" : "outline"}
+                      className="h-8 px-3 text-xs"
+                      onClick={() => applyPreset(p.panels, p.modules)}
+                    >
+                      {p.panels} {t("paneler", "panels")}
+                      <span className="ml-1 opacity-70">
+                        {fmtNum((p.panels * params.wpPerPanel) / 1000, 1)} kWp
+                      </span>
+                    </Button>
+                  ))}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <NumField
                     label={t("Antal solpaneler", "Number of solar panels")}
