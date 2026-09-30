@@ -543,7 +543,11 @@ function Index() {
                     </Label>
                     <Select
                       value={atmoceBatteryId ?? ""}
-                      onValueChange={(v) => setAtmoceBatteryConfigId(v)}
+                      onValueChange={(v) => {
+                        setAtmoceBatteryConfigId(v);
+                        // Låt referenssystemet automatiskt matcha nya kapaciteten.
+                        setRefKwhOverride(null);
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
