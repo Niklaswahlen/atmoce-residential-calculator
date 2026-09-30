@@ -530,35 +530,78 @@ export async function generateSummaryPdf(input: PdfInput) {
   // @ts-expect-error - autoTable adds lastAutoTable
   cursorY = (doc.lastAutoTable?.finalY ?? cursorY) + 12;
 
-  // ---- Resultat-kort: mörkt plum, rundade hörn ----
+  // ---- Resultat-kort: sammanfattning av jämförelsetabellen ----
   {
-    const stripH = 18;
+    const stripH = 36;
+    const cardW = pageW - 2 * margin;
     doc.setFillColor(...PLUM);
-    doc.roundedRect(margin, cursorY, pageW - 2 * margin, stripH, 1.8, 1.8, "F");
+    doc.roundedRect(margin, cursorY, cardW, stripH, 1.8, 1.8, "F");
     doc.setFillColor(...CORAL);
     doc.roundedRect(margin, cursorY, 2.4, stripH, 1.1, 1.1, "F");
 
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.8);
-    doc.text("RESULTAT", margin + 6, cursorY + 5.6, { charSpace: 0.35 });
+    const total = rows.length;
+    const leftX = margin + 6;
+    doc.setTextColor(237, 170, 150);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11.5);
-    const scoreText = `${atmoce.name} ${atmoceWins} – ${refWins} ${reference.name}`;
-    doc.text(scoreText, margin + 6, cursorY + 12.4);
-    const scoreW = doc.getTextWidth(scoreText);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(210, 200, 212);
-    doc.text(`(oavgjort ${ties})`, margin + 6 + scoreW + 1.8, cursorY + 12.4);
+    doc.setFontSize(6.5);
+    doc.text("RESULTAT AV JÄMFÖRELSEN", leftX, cursorY + 6, { charSpace: 0.35 });
+
+    const winnerIsAtmoce = atmoceWins >= refWins;
+    const headline = winnerIsAtmoce
+      ? `${atmoce.name} vinner ${atmoceWins} av ${total} nyckeltal`
+      : `${reference.name} vinner ${refWins} av ${total} nyckeltal`;
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.text(headline, leftX, cursorY + 12.5);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.8);
-    doc.setTextColor(220, 212, 222);
-    const snowLine1 = `Snösmältning ${snow.location.name} (${MODE_LABEL[snowMode]}): +${fmtNum(snow.totalRecoveredKwh)} kWh/år`;
-    const snowLine2 = `Nettovinst ${sek(snow.totalNetBenefit)}/år`;
-    doc.text(snowLine1, pageW - margin - 5, cursorY + 7.4, { align: "right" });
-    doc.text(snowLine2, pageW - margin - 5, cursorY + 12.2, { align: "right" });
+    doc.setFontSize(7.5);
+    doc.setTextColor(210, 200, 212);
+    const sub = winnerIsAtmoce
+      ? `${reference.name}: ${refWins}  ·  Oavgjort: ${ties}`
+      : `${atmoce.name}: ${atmoceWins}  ·  Oavgjort: ${ties}`;
+    doc.text(sub, margin + cardW - 5, cursorY + 12.5, { align: "right" });
+
+    // Tre nyckeltal till höger
+    const npvD = atmoceResult.npv - refResult.npv;
+    const pbD =
+      paybackA !== null && paybackB !== null ? paybackB - paybackA : null;
+    const stats: { label: string; value: string }[] = [
+      { label: "Nuvärde-fördel", value: `${npvD >= 0 ? "+" : ""}${sek(npvD)}` },
+      {
+        label: "Återbetalning",
+        value:
+          pbD === null
+            ? paybackA === null ? "> kalkyltid" : `${fmtNum(paybackA, 1)} år`
+            : `${pbD >= 0 ? "" : "+"}${fmtNum(Math.abs(pbD), 1)} år ${pbD >= 0 ? "snabbare" : "långsammare"}`,
+      },
+      {
+        label: `Snösmältning (${snow.location.name})`,
+        value: `+${fmtNum(snow.totalRecoveredKwh)} kWh · ${sek(snow.totalNetBenefit)}/år`,
+      },
+    ];
+    const statW = (cardW - 10) / stats.length;
+    let sx = leftX - 1;
+    const sy = cursorY + 14;
+    doc.setDrawColor(90, 70, 92);
+    doc.setLineWidth(0.2);
+    doc.line(leftX, cursorY + 22.5, margin + cardW - 5, cursorY + 22.5);
+    stats.forEach((s, i) => {
+      if (i > 0) {
+        doc.setDrawColor(90, 70, 92);
+        doc.setLineWidth(0.2);
+        doc.line(sx - 2, sy + 11, sx - 2, sy + 19);
+      }
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.3);
+      doc.setTextColor(200, 190, 202);
+      doc.text(s.label.toUpperCase(), sx + 1, sy + 13.5, { charSpace: 0.25 });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text(s.value, sx + 1, sy + 18.5);
+      sx += statW;
+    });
   }
 
   drawFooter(doc, pageW, pageH, margin);
