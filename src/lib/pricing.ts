@@ -208,6 +208,13 @@ export function computeSystemPrice(args: ComputeArgs): SystemPriceResult {
     }
   }
 
+  // Atmoce Combiner hör bara till Atmoce-batterierna — exkludera den manuella
+  // ESS-raden när vald batterikonfiguration inte är en Atmoce-modell.
+  const includeCombiner = !batteryConfig || batteryConfig.id.startsWith("atmoce");
+  const essLines = includeCombiner
+    ? lines
+    : lines.filter((l) => l.component_id !== "atmoce_combiner");
+
   const pv = computeSide(
     lines,
     byId,
@@ -220,7 +227,7 @@ export function computeSystemPrice(args: ComputeArgs): SystemPriceResult {
     config.pv_override_inc_vat,
   );
   const ess = computeSide(
-    lines,
+    essLines,
     byId,
     "ess",
     panels,
