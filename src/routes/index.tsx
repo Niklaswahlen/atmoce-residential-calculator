@@ -515,9 +515,9 @@ function Index() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pb-4">
-            <div className="grid gap-4 lg:grid-cols-2">
-              {/* Kolumn 1: Anläggning + Atmoce batteri */}
-              <div className="space-y-2">
+            <div className="grid gap-2 lg:grid-cols-2">
+              {/* Rad 1: Anläggning (vänster) — höger sida medvetet tom på desktop */}
+              <div className="space-y-2 lg:col-start-1 lg:row-start-1">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
@@ -563,86 +563,48 @@ function Index() {
                   <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
                   <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
                 </div>
-                {pricing && atmoceBatteryOptions.length > 1 && (
-                  <div className="min-w-0 space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      {t("Atmoce batterimodell", "Atmoce battery model")}
-                    </Label>
-                    <Select
-                      value={atmoceBatteryId ?? ""}
-                      onValueChange={(v) => {
-                        setAtmoceBatteryConfigId(v);
-                        // Låt referenssystemet automatiskt matcha nya kapaciteten.
-                        setRefKwhOverride(null);
-                      }}
-                    >
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {atmoceBatteryOptions.map((o) => (
-                          <SelectItem key={o.configId} value={o.configId}>
-                            {o.name} — {fmtNum(o.kwhPerModule, 2)} kWh
-                            {o.warrantyYears ? ` · ${o.warrantyYears} ${t("år", "yrs")}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {atmoceOption && (
-                      <p className="text-[11px] text-muted-foreground">
-                        {t("Garanti", "Warranty")}: {atmoceOption.warrantyYears ?? "—"}{" "}
-                        {t("år", "yrs")}
-                        {atmoceOption.warrantyCycles
-                          ? ` · ${fmtNum(atmoceOption.warrantyCycles, 0)} ${t("cykler", "cycles")}`
-                          : ""}
-                      </p>
-                    )}
-                  </div>
-                )}
-                {pricing && (
-                  <NumField
-                    label={t(
-                      `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
-                      `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
-                    )}
-                    value={atmoceModules}
-                    onChange={(v) =>
-                      setAtmoceModulesState(
-                        Math.max(
-                          atmoceMinModules,
-                          Math.min(atmoceMaxModules, Math.round(v)),
-                        ),
-                      )
-                    }
-                    editable
-                    min={atmoceMinModules}
-                    suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
-                  />
-                )}
-                <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs font-mono">
-                  Atmoce <b>{fmtNum(atmoce.batteryKwh, 1)} kWh</b>{" "}
-                  <span className="text-muted-foreground">↔</span>{" "}
-                  {reference.short} <b>{fmtNum(reference.batteryKwh, 1)} kWh</b>
-                </div>
-                <div className="rounded-md border border-atmoce/40 bg-atmoce/5 px-2.5 py-2">
-                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-atmoce">
-                    {t("Atmoce", "Atmoce")}
-                  </div>
-                  <PriceField
-                    label={t(
-                      "Kostnad (ink moms, efter GTA)",
-                      "Cost (incl. VAT, after GTA)",
-                    )}
-                    value={atmocePriceEffective}
-                    estimated={atmoceEstimated}
-                    isOverride={atmocePriceOverride !== null}
-                    onChange={(n) => setAtmocePriceOverride(n)}
-                  />
-                </div>
               </div>
 
-              {/* Kolumn 2: Annat system */}
-              <div className="space-y-2">
+              {/* Rad 2 vänster: Atmoce batterimodell */}
+              {pricing && atmoceBatteryOptions.length > 1 && (
+                <div className="min-w-0 space-y-1.5 lg:col-start-1 lg:row-start-2">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t("Atmoce batterimodell", "Atmoce battery model")}
+                  </Label>
+                  <Select
+                    value={atmoceBatteryId ?? ""}
+                    onValueChange={(v) => {
+                      setAtmoceBatteryConfigId(v);
+                      // Låt referenssystemet automatiskt matcha nya kapaciteten.
+                      setRefKwhOverride(null);
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {atmoceBatteryOptions.map((o) => (
+                        <SelectItem key={o.configId} value={o.configId}>
+                          {o.name} — {fmtNum(o.kwhPerModule, 2)} kWh
+                          {o.warrantyYears ? ` · ${o.warrantyYears} ${t("år", "yrs")}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {atmoceOption && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {t("Garanti", "Warranty")}: {atmoceOption.warrantyYears ?? "—"}{" "}
+                      {t("år", "yrs")}
+                      {atmoceOption.warrantyCycles
+                        ? ` · ${fmtNum(atmoceOption.warrantyCycles, 0)} ${t("cykler", "cycles")}`
+                        : ""}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Rad 2 höger: Annat system (referens) + Välj system */}
+              <div className="space-y-2 lg:col-start-2 lg:row-start-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Annat system (referens)", "Other system (reference)")}
                 </div>
@@ -673,6 +635,39 @@ function Index() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Rad 3 vänster: Atmoce batterimoduler + jämförelse */}
+              <div className="space-y-2 lg:col-start-1 lg:row-start-3">
+                {pricing && (
+                  <NumField
+                    label={t(
+                      `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
+                      `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
+                    )}
+                    value={atmoceModules}
+                    onChange={(v) =>
+                      setAtmoceModulesState(
+                        Math.max(
+                          atmoceMinModules,
+                          Math.min(atmoceMaxModules, Math.round(v)),
+                        ),
+                      )
+                    }
+                    editable
+                    min={atmoceMinModules}
+                    suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
+                  />
+                )}
+                <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs font-mono">
+                  Atmoce <b>{fmtNum(atmoce.batteryKwh, 1)} kWh</b>{" "}
+                  <span className="text-muted-foreground">↔</span>{" "}
+                  {reference.short} <b>{fmtNum(reference.batteryKwh, 1)} kWh</b>
+                </div>
+              </div>
+
+              {/* Rad 3 höger: referens batterimoduler */}
+              <div className="space-y-2 lg:col-start-2 lg:row-start-3">
                 {isCustomRef ? (
                   <div className="grid gap-3 rounded-md border border-dashed bg-muted/30 p-3 sm:grid-cols-2">
                     <NumField
@@ -732,27 +727,45 @@ function Index() {
                     </div>
                   </>
                 )}
-                <div className="rounded-md border bg-muted/50 px-2.5 py-2">
-                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {reference.short}
-                  </div>
-                  <PriceField
-                    label={t("Kostnad (ink GTA)", "Cost (incl. GTA)")}
-                    value={refPriceEffective}
-                    estimated={refEstimated}
-                    isOverride={isCustomRef ? true : refPriceOverride !== null}
-                    hideEstimate={isCustomRef}
-                    onChange={(n) => {
-                      if (isCustomRef) {
-                        if (n !== null) setCustomPrice(n);
-                      } else {
-                        setRefPriceOverride(n);
-                      }
-                    }}
-                  />
-                </div>
               </div>
-              <div className="lg:col-span-2">
+
+              {/* Rad 4: prisrutor — Atmoce till vänster, referens till höger */}
+              <div className="rounded-md border border-atmoce/40 bg-atmoce/5 px-2.5 py-2 lg:col-start-1 lg:row-start-4">
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-atmoce">
+                  {t("Atmoce", "Atmoce")}
+                </div>
+                <PriceField
+                  label={t(
+                    "Kostnad (ink moms, efter GTA)",
+                    "Cost (incl. VAT, after GTA)",
+                  )}
+                  value={atmocePriceEffective}
+                  estimated={atmoceEstimated}
+                  isOverride={atmocePriceOverride !== null}
+                  onChange={(n) => setAtmocePriceOverride(n)}
+                />
+              </div>
+              <div className="rounded-md border bg-muted/50 px-2.5 py-2 lg:col-start-2 lg:row-start-4">
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {reference.short}
+                </div>
+                <PriceField
+                  label={t("Kostnad (ink GTA)", "Cost (incl. GTA)")}
+                  value={refPriceEffective}
+                  estimated={refEstimated}
+                  isOverride={isCustomRef ? true : refPriceOverride !== null}
+                  hideEstimate={isCustomRef}
+                  onChange={(n) => {
+                    if (isCustomRef) {
+                      if (n !== null) setCustomPrice(n);
+                    } else {
+                      setRefPriceOverride(n);
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="lg:col-span-2 lg:row-start-5">
                 <Button
                   type="button"
                   variant="outline"
