@@ -228,7 +228,13 @@ export function SystemConfigCard({ config, lines, components, settings, panels, 
           title={t("ESS-sida (batteri + tillhörande)", "ESS side (battery + related)")}
           side="ess"
           systemId={config.id}
-          lines={lines.filter((l) => l.side === "ess")}
+          lines={lines.filter(
+            (l) =>
+              l.side === "ess" &&
+              (l.component_id !== "atmoce_combiner" ||
+                !batteryConfigId ||
+                batteryConfigId.startsWith("atmoce")),
+          )}
           injectedLines={result.ess.lines.filter((l) => l.source === "battery_config")}
           components={components}
           result={result.ess}
