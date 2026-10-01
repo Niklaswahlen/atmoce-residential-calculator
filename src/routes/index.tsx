@@ -518,8 +518,8 @@ function Index() {
           </CardHeader>
           <CardContent className="pb-4">
             <div className="mx-auto grid max-w-5xl gap-2 lg:grid-cols-2">
-              {/* Rad 1: Anläggning (vänster) — höger sida medvetet tom på desktop */}
-              <div className="space-y-2 lg:col-start-1 lg:row-start-1">
+              {/* Rad 1: Dina siffror / anläggning — centrerad över båda systemen */}
+              <div className="mx-auto w-full max-w-sm space-y-2 lg:col-span-2 lg:row-start-1">
                 <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
