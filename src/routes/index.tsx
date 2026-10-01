@@ -563,7 +563,7 @@ function Index() {
                     suffix="W"
                   />
                 </div>
-                <div className="rounded-md bg-muted px-2.5 py-1.5 text-center text-xs">
+                <div className="mx-auto max-w-sm rounded-md bg-muted px-2.5 py-1.5 text-center text-xs">
                   <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
                   <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
                 </div>
