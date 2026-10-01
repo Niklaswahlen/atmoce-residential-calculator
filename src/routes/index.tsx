@@ -117,6 +117,7 @@ function NumField({
   suffix,
   min,
   editable = false,
+  center = false,
 }: {
   label: string;
   value: number;
@@ -125,6 +126,7 @@ function NumField({
   suffix?: string;
   min?: number;
   editable?: boolean;
+  center?: boolean;
 }) {
   const decimals = step < 1 ? 2 : 0;
   const [focused, setFocused] = useState(false);
@@ -155,7 +157,7 @@ function NumField({
   };
   return (
     <div className="min-w-0 space-y-1">
-      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
+      <Label className={`text-[11px] leading-none font-medium text-muted-foreground${center ? " block text-center" : ""}`}>{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -167,7 +169,7 @@ function NumField({
           }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
-          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
+          className={`h-8 w-full min-w-0 pr-14 font-mono text-sm${center ? " text-center" : ""}`}
         />
         {suffix && (
           <span className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
@@ -510,18 +512,18 @@ function Index() {
         {/* Snabb-override: paneler + faktiska offertpriser */}
         <Card className="mb-4 border-l-4 border-l-atmoce">
           <CardHeader className="pb-1 pt-4">
-            <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
+            <CardTitle className="text-center text-sm uppercase tracking-wide text-muted-foreground">
               {t("Dina siffror", "Your numbers")}
             </CardTitle>
           </CardHeader>
           <CardContent className="pb-4">
-            <div className="grid gap-2 lg:grid-cols-2">
+            <div className="mx-auto grid max-w-5xl gap-2 lg:grid-cols-2">
               {/* Rad 1: Anläggning (vänster) — höger sida medvetet tom på desktop */}
               <div className="space-y-2 lg:col-start-1 lg:row-start-1">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {[
                     { panels: 10, modules: 1 },
                     { panels: 15, modules: 2 },
@@ -544,6 +546,7 @@ function Index() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <NumField
+                    center
                     label={t("Antal solpaneler", "Number of solar panels")}
                     value={params.panels}
                     onChange={set("panels")}
@@ -551,6 +554,7 @@ function Index() {
                     min={1}
                   />
                   <NumField
+                    center
                     label={t("Wp/panel", "Wp/panel")}
                     value={params.wpPerPanel}
                     onChange={set("wpPerPanel")}
@@ -559,7 +563,7 @@ function Index() {
                     suffix="W"
                   />
                 </div>
-                <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs">
+                <div className="rounded-md bg-muted px-2.5 py-1.5 text-center text-xs">
                   <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
                   <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
                 </div>
@@ -568,7 +572,7 @@ function Index() {
               {/* Rad 2 vänster: Atmoce batterimodell */}
               {pricing && atmoceBatteryOptions.length > 1 && (
                 <div className="min-w-0 space-y-1.5 lg:col-start-1 lg:row-start-2">
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="block text-center text-xs font-medium text-muted-foreground">
                     {t("Atmoce batterimodell", "Atmoce battery model")}
                   </Label>
                   <Select
@@ -592,7 +596,7 @@ function Index() {
                     </SelectContent>
                   </Select>
                   {atmoceOption && (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-center text-[11px] text-muted-foreground">
                       {t("Garanti", "Warranty")}: {atmoceOption.warrantyYears ?? "—"}{" "}
                       {t("år", "yrs")}
                       {atmoceOption.warrantyCycles
@@ -605,11 +609,11 @@ function Index() {
 
               {/* Rad 2 höger: Annat system (referens) + Välj system */}
               <div className="space-y-2 lg:col-start-2 lg:row-start-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Annat system (referens)", "Other system (reference)")}
                 </div>
                 <div className="min-w-0 space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="block text-center text-xs font-medium text-muted-foreground">
                     {t("Välj system", "Select system")}
                   </Label>
                   <Select
@@ -641,6 +645,7 @@ function Index() {
               <div className="space-y-2 lg:col-start-1 lg:row-start-3">
                 {pricing && (
                   <NumField
+                    center
                     label={t(
                       `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
                       `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
@@ -659,7 +664,7 @@ function Index() {
                     suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                   />
                 )}
-                <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs font-mono">
+                <div className="rounded-md bg-muted px-2.5 py-1.5 text-center font-mono text-xs">
                   Atmoce <b>{fmtNum(atmoce.batteryKwh, 1)} kWh</b>{" "}
                   <span className="text-muted-foreground">↔</span>{" "}
                   {reference.short} <b>{fmtNum(reference.batteryKwh, 1)} kWh</b>
@@ -671,6 +676,7 @@ function Index() {
                 {isCustomRef ? (
                   <div className="grid gap-3 rounded-md border border-dashed bg-muted/30 p-3 sm:grid-cols-2">
                     <NumField
+                      center
                       label={t("Batterikapacitet", "Battery capacity")}
                       value={customBatteryKwh}
                       onChange={(v) => setCustomBatteryKwh(Math.max(1, v))}
@@ -679,6 +685,7 @@ function Index() {
                       suffix="kWh"
                     />
                     <NumField
+                      center
                       label={t("Round-trip effektivitet", "Round-trip efficiency")}
                       value={customRoundTrip}
                       onChange={(v) => setCustomRoundTrip(Math.max(1, Math.min(100, v)))}
@@ -687,6 +694,7 @@ function Index() {
                       min={1}
                     />
                     <NumField
+                      center
                       label={t("Garanti växelriktare", "Inverter warranty")}
                       value={customInvWarranty}
                       onChange={(v) => setCustomInvWarranty(Math.max(0, v))}
@@ -695,6 +703,7 @@ function Index() {
                       min={0}
                     />
                     <NumField
+                      center
                       label={t("Garanti batteri", "Battery warranty")}
                       value={customBatWarranty}
                       onChange={(v) => setCustomBatWarranty(Math.max(0, v))}
@@ -706,6 +715,7 @@ function Index() {
                 ) : (
                   <>
                     <NumField
+                      center
                       label={t(
                         `Batterimoduler (à ${fmtNum(refUnitKwh, 2)} kWh)`,
                         `Battery modules (each ${fmtNum(refUnitKwh, 2)} kWh)`,
@@ -719,7 +729,7 @@ function Index() {
                       min={1}
                       suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
                     />
-                    <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs font-mono">
+                    <div className="rounded-md bg-muted px-2.5 py-1.5 text-center font-mono text-xs">
                       {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
                       <span className="font-semibold">
                         {fmtNum(reference.batteryKwh, 2)} kWh
@@ -731,10 +741,11 @@ function Index() {
 
               {/* Rad 4: prisrutor — Atmoce till vänster, referens till höger */}
               <div className="rounded-md border border-atmoce/40 bg-atmoce/5 px-2.5 py-2 lg:col-start-1 lg:row-start-4">
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-atmoce">
+                <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-atmoce">
                   {t("Atmoce", "Atmoce")}
                 </div>
                 <PriceField
+                  center
                   label={t(
                     "Kostnad (ink moms, efter GTA)",
                     "Cost (incl. VAT, after GTA)",
@@ -746,10 +757,11 @@ function Index() {
                 />
               </div>
               <div className="rounded-md border bg-muted/50 px-2.5 py-2 lg:col-start-2 lg:row-start-4">
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {reference.short}
                 </div>
                 <PriceField
+                  center
                   label={t("Kostnad (ink GTA)", "Cost (incl. GTA)")}
                   value={refPriceEffective}
                   estimated={refEstimated}
@@ -1382,6 +1394,7 @@ function PriceField({
   estimated,
   isOverride,
   hideEstimate,
+  center = false,
   onChange,
 }: {
   label: string;
@@ -1389,6 +1402,7 @@ function PriceField({
   estimated: number;
   isOverride: boolean;
   hideEstimate?: boolean;
+  center?: boolean;
   onChange: (n: number | null) => void;
 }) {
   const [focused, setFocused] = useState(false);
@@ -1399,7 +1413,7 @@ function PriceField({
   }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1">
-      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
+      <Label className={`text-[11px] leading-none font-medium text-muted-foreground${center ? " block text-center" : ""}`}>{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -1425,13 +1439,13 @@ function PriceField({
             }
             setDraft(formatWithSpaces(rounded));
           }}
-          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
+          className={`h-8 w-full min-w-0 pr-14 font-mono text-sm${center ? " text-center" : ""}`}
         />
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
           kr
         </span>
       </div>
-      <div className="text-[11px] text-muted-foreground">
+      <div className={`text-[11px] text-muted-foreground${center ? " text-center" : ""}`}>
         {hideEstimate
           ? "\u00A0"
           : isOverride
