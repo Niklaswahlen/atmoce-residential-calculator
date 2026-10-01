@@ -157,7 +157,7 @@ function NumField({
   };
   return (
     <div className="min-w-0 space-y-1">
-      <Label className={`text-[11px] leading-none font-medium text-muted-foreground${center ? " text-center" : ""}`}>{label}</Label>
+      <Label className={`text-[11px] leading-none font-medium text-muted-foreground${center ? " block text-center" : ""}`}>{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -572,7 +572,7 @@ function Index() {
               {/* Rad 2 vänster: Atmoce batterimodell */}
               {pricing && atmoceBatteryOptions.length > 1 && (
                 <div className="min-w-0 space-y-1.5 lg:col-start-1 lg:row-start-2">
-                  <Label className="text-center text-xs font-medium text-muted-foreground">
+                  <Label className="block text-center text-xs font-medium text-muted-foreground">
                     {t("Atmoce batterimodell", "Atmoce battery model")}
                   </Label>
                   <Select
@@ -613,7 +613,7 @@ function Index() {
                   {t("Annat system (referens)", "Other system (reference)")}
                 </div>
                 <div className="min-w-0 space-y-1.5">
-                  <Label className="text-center text-xs font-medium text-muted-foreground">
+                  <Label className="block text-center text-xs font-medium text-muted-foreground">
                     {t("Välj system", "Select system")}
                   </Label>
                   <Select
@@ -1413,7 +1413,7 @@ function PriceField({
   }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1">
-      <Label className={`text-[11px] leading-none font-medium text-muted-foreground${center ? " text-center" : ""}`}>{label}</Label>
+      <Label className={`text-[11px] leading-none font-medium text-muted-foreground${center ? " block text-center" : ""}`}>{label}</Label>
       <div className="relative">
         <Input
           type="text"
