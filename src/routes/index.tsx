@@ -786,7 +786,6 @@ function Index() {
                 </Button>
               </div>
             </div>
-            </div>
           </CardContent>
         </Card>
 
