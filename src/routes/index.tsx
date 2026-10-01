@@ -645,6 +645,7 @@ function Index() {
               <div className="space-y-2 lg:col-start-1 lg:row-start-3">
                 {pricing && (
                   <NumField
+                    center
                     label={t(
                       `Atmoce batterimoduler (à ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
                       `Atmoce battery modules (each ${fmtNum(atmoceUnitKwh, 2)} kWh)`,
@@ -663,7 +664,7 @@ function Index() {
                     suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                   />
                 )}
-                <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs font-mono">
+                <div className="rounded-md bg-muted px-2.5 py-1.5 text-center font-mono text-xs">
                   Atmoce <b>{fmtNum(atmoce.batteryKwh, 1)} kWh</b>{" "}
                   <span className="text-muted-foreground">↔</span>{" "}
                   {reference.short} <b>{fmtNum(reference.batteryKwh, 1)} kWh</b>
@@ -675,6 +676,7 @@ function Index() {
                 {isCustomRef ? (
                   <div className="grid gap-3 rounded-md border border-dashed bg-muted/30 p-3 sm:grid-cols-2">
                     <NumField
+                      center
                       label={t("Batterikapacitet", "Battery capacity")}
                       value={customBatteryKwh}
                       onChange={(v) => setCustomBatteryKwh(Math.max(1, v))}
@@ -683,6 +685,7 @@ function Index() {
                       suffix="kWh"
                     />
                     <NumField
+                      center
                       label={t("Round-trip effektivitet", "Round-trip efficiency")}
                       value={customRoundTrip}
                       onChange={(v) => setCustomRoundTrip(Math.max(1, Math.min(100, v)))}
@@ -691,6 +694,7 @@ function Index() {
                       min={1}
                     />
                     <NumField
+                      center
                       label={t("Garanti växelriktare", "Inverter warranty")}
                       value={customInvWarranty}
                       onChange={(v) => setCustomInvWarranty(Math.max(0, v))}
@@ -699,6 +703,7 @@ function Index() {
                       min={0}
                     />
                     <NumField
+                      center
                       label={t("Garanti batteri", "Battery warranty")}
                       value={customBatWarranty}
                       onChange={(v) => setCustomBatWarranty(Math.max(0, v))}
@@ -710,6 +715,7 @@ function Index() {
                 ) : (
                   <>
                     <NumField
+                      center
                       label={t(
                         `Batterimoduler (à ${fmtNum(refUnitKwh, 2)} kWh)`,
                         `Battery modules (each ${fmtNum(refUnitKwh, 2)} kWh)`,
@@ -723,7 +729,7 @@ function Index() {
                       min={1}
                       suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
                     />
-                    <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs font-mono">
+                    <div className="rounded-md bg-muted px-2.5 py-1.5 text-center font-mono text-xs">
                       {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
                       <span className="font-semibold">
                         {fmtNum(reference.batteryKwh, 2)} kWh
@@ -735,10 +741,11 @@ function Index() {
 
               {/* Rad 4: prisrutor — Atmoce till vänster, referens till höger */}
               <div className="rounded-md border border-atmoce/40 bg-atmoce/5 px-2.5 py-2 lg:col-start-1 lg:row-start-4">
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-atmoce">
+                <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-atmoce">
                   {t("Atmoce", "Atmoce")}
                 </div>
                 <PriceField
+                  center
                   label={t(
                     "Kostnad (ink moms, efter GTA)",
                     "Cost (incl. VAT, after GTA)",
@@ -750,10 +757,11 @@ function Index() {
                 />
               </div>
               <div className="rounded-md border bg-muted/50 px-2.5 py-2 lg:col-start-2 lg:row-start-4">
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {reference.short}
                 </div>
                 <PriceField
+                  center
                   label={t("Kostnad (ink GTA)", "Cost (incl. GTA)")}
                   value={refPriceEffective}
                   estimated={refEstimated}
