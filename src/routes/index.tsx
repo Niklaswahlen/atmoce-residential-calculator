@@ -512,7 +512,7 @@ function Index() {
         {/* Snabb-override: paneler + faktiska offertpriser */}
         <Card className="mb-4 border-l-4 border-l-atmoce">
           <CardHeader className="pb-1 pt-4">
-            <CardTitle className="text-sm uppercase tracking-wide text-muted-foreground">
+            <CardTitle className="text-center text-sm uppercase tracking-wide text-muted-foreground">
               {t("Dina siffror", "Your numbers")}
             </CardTitle>
           </CardHeader>
@@ -520,10 +520,10 @@ function Index() {
             <div className="grid gap-2 lg:grid-cols-2">
               {/* Rad 1: Anläggning (vänster) — höger sida medvetet tom på desktop */}
               <div className="space-y-2 lg:col-start-1 lg:row-start-1">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {[
                     { panels: 10, modules: 1 },
                     { panels: 15, modules: 2 },
@@ -546,6 +546,7 @@ function Index() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <NumField
+                    center
                     label={t("Antal solpaneler", "Number of solar panels")}
                     value={params.panels}
                     onChange={set("panels")}
@@ -553,6 +554,7 @@ function Index() {
                     min={1}
                   />
                   <NumField
+                    center
                     label={t("Wp/panel", "Wp/panel")}
                     value={params.wpPerPanel}
                     onChange={set("wpPerPanel")}
@@ -561,7 +563,7 @@ function Index() {
                     suffix="W"
                   />
                 </div>
-                <div className="rounded-md bg-muted px-2.5 py-1.5 text-xs">
+                <div className="rounded-md bg-muted px-2.5 py-1.5 text-center text-xs">
                   <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
                   <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
                 </div>
@@ -570,7 +572,7 @@ function Index() {
               {/* Rad 2 vänster: Atmoce batterimodell */}
               {pricing && atmoceBatteryOptions.length > 1 && (
                 <div className="min-w-0 space-y-1.5 lg:col-start-1 lg:row-start-2">
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-center text-xs font-medium text-muted-foreground">
                     {t("Atmoce batterimodell", "Atmoce battery model")}
                   </Label>
                   <Select
@@ -594,7 +596,7 @@ function Index() {
                     </SelectContent>
                   </Select>
                   {atmoceOption && (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-center text-[11px] text-muted-foreground">
                       {t("Garanti", "Warranty")}: {atmoceOption.warrantyYears ?? "—"}{" "}
                       {t("år", "yrs")}
                       {atmoceOption.warrantyCycles
@@ -607,11 +609,11 @@ function Index() {
 
               {/* Rad 2 höger: Annat system (referens) + Välj system */}
               <div className="space-y-2 lg:col-start-2 lg:row-start-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Annat system (referens)", "Other system (reference)")}
                 </div>
                 <div className="min-w-0 space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-center text-xs font-medium text-muted-foreground">
                     {t("Välj system", "Select system")}
                   </Label>
                   <Select
