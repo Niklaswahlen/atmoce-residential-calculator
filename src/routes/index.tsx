@@ -613,9 +613,7 @@ function Index() {
                   {t("Annat system (referens)", "Other system (reference)")}
                 </div>
                 <div className="min-w-0 space-y-1.5">
-                  <Label className="block text-center text-xs font-medium text-muted-foreground">
-                    {t("Välj system", "Select system")}
-                  </Label>
+
                   <Select
                     value={refChoice}
                     onValueChange={(v) => {
