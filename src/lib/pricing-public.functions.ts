@@ -143,8 +143,15 @@ function buildPublicPayload(raw: RawPricing): PublicPricingPayload {
     };
 
     const sysLines = lines.filter((l) => l.system_id === config.id);
-    const essFor = (b: BatteryConfig | undefined) =>
-      reduceSide(sysLines, byId, "ess", settings.margin_pct, settings.vat_pct, settings.gta_ess_pct, config.ess_override_inc_vat, injectedFor(b));
+    // Atmoce Combiner hör bara till Atmoce-batterierna — exkludera den ur
+    // ESS-koefficienterna för batterialternativ som inte är Atmoce-modeller.
+    const essFor = (b: BatteryConfig | undefined) => {
+      const includeCombiner = !b || b.id.startsWith("atmoce");
+      const essLines = includeCombiner
+        ? sysLines
+        : sysLines.filter((l) => l.component_id !== "atmoce_combiner");
+      return reduceSide(essLines, byId, "ess", settings.margin_pct, settings.vat_pct, settings.gta_ess_pct, config.ess_override_inc_vat, injectedFor(b));
+    };
 
     const pv = reduceSide(sysLines, byId, "pv", settings.margin_pct, settings.vat_pct, settings.gta_pv_pct, config.pv_override_inc_vat);
     const ess = essFor(bc);
