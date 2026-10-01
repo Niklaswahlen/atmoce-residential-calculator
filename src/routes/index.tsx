@@ -117,6 +117,7 @@ function NumField({
   suffix,
   min,
   editable = false,
+  center = false,
 }: {
   label: string;
   value: number;
@@ -125,6 +126,7 @@ function NumField({
   suffix?: string;
   min?: number;
   editable?: boolean;
+  center?: boolean;
 }) {
   const decimals = step < 1 ? 2 : 0;
   const [focused, setFocused] = useState(false);
@@ -155,7 +157,7 @@ function NumField({
   };
   return (
     <div className="min-w-0 space-y-1">
-      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
+      <Label className={`text-[11px] leading-none font-medium text-muted-foreground${center ? " text-center" : ""}`}>{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -167,7 +169,7 @@ function NumField({
           }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
-          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
+          className={`h-8 w-full min-w-0 pr-14 font-mono text-sm${center ? " text-center" : ""}`}
         />
         {suffix && (
           <span className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
@@ -1382,6 +1384,7 @@ function PriceField({
   estimated,
   isOverride,
   hideEstimate,
+  center = false,
   onChange,
 }: {
   label: string;
@@ -1389,6 +1392,7 @@ function PriceField({
   estimated: number;
   isOverride: boolean;
   hideEstimate?: boolean;
+  center?: boolean;
   onChange: (n: number | null) => void;
 }) {
   const [focused, setFocused] = useState(false);
@@ -1399,7 +1403,7 @@ function PriceField({
   }, [value, focused]);
   return (
     <div className="min-w-0 space-y-1">
-      <Label className="text-[11px] leading-none font-medium text-muted-foreground">{label}</Label>
+      <Label className={`text-[11px] leading-none font-medium text-muted-foreground${center ? " text-center" : ""}`}>{label}</Label>
       <div className="relative">
         <Input
           type="text"
@@ -1425,13 +1429,13 @@ function PriceField({
             }
             setDraft(formatWithSpaces(rounded));
           }}
-          className="h-8 w-full min-w-0 pr-14 font-mono text-sm"
+          className={`h-8 w-full min-w-0 pr-14 font-mono text-sm${center ? " text-center" : ""}`}
         />
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
           kr
         </span>
       </div>
-      <div className="text-[11px] text-muted-foreground">
+      <div className={`text-[11px] text-muted-foreground${center ? " text-center" : ""}`}>
         {hideEstimate
           ? "\u00A0"
           : isOverride
