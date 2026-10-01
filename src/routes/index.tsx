@@ -517,7 +517,7 @@ function Index() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pb-4">
-            <div className="grid gap-2 lg:grid-cols-2">
+            <div className="mx-auto grid max-w-5xl gap-2 lg:grid-cols-2">
               {/* Rad 1: Anläggning (vänster) — höger sida medvetet tom på desktop */}
               <div className="space-y-2 lg:col-start-1 lg:row-start-1">
                 <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
