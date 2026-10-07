@@ -779,8 +779,9 @@ function Index() {
           </CardContent>
         </Card>
 
-        {/* Atmoce-fördelar: fyra vinnarkort */}
-        <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {/* Atmoce-fördelar: fyra vinnarkort — döljs i Base */}
+        {!isBase && (
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <WinCard
             label={t("Ekonomisk vinst", "Economic gain")}
             value={`${extraSavings >= 0 ? "+" : ""}${fmtSek(extraSavings)}`}
@@ -831,7 +832,8 @@ function Index() {
               (atmoceWarrantyYears ?? 0) >= (refWarrantyYears ?? 0)
             }
           />
-        </div>
+          </div>
+        )}
 
 
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
