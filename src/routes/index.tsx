@@ -1542,7 +1542,7 @@ function SystemCard({
       }
     >
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <CardTitle className="text-base">{title}</CardTitle>
           {isAtmoce && (
             <span className="rounded-full bg-atmoce px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-foreground">
@@ -1585,7 +1585,7 @@ function Metric({
   big?: boolean;
 }) {
   return (
-    <div>
+    <div className="text-center">
       <div className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
