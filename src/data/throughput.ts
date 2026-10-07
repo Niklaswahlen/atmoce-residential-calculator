@@ -8,9 +8,14 @@ export const ATMOCE_THROUGHPUT_MWH: Record<string, number> = {
   atmoce_8_pro: 51.0, // MS-8K-U Pro
 };
 
-/** Referenssystem → MWh per modul. Dyness Stack100: 45,272 MWh / 3 moduler. */
+/**
+ * Referenssystem → MWh per modul.
+ * Dyness Stack100: 45,272 MWh / 3 moduler.
+ * Sigenergy SigenStor BAT 10.0 (8,76 kWh användbart): 30,66 MWh.
+ */
 export const REF_THROUGHPUT_MWH: Record<string, number> = {
   solis_dyness: 45.272 / 3,
+  sigenergy: 30.66,
 };
 
 /**
@@ -19,4 +24,5 @@ export const REF_THROUGHPUT_MWH: Record<string, number> = {
  */
 export const REF_THROUGHPUT_LABEL: Record<string, string> = {
   solis_dyness: "Dyness Stack100",
+  sigenergy: "Sigenergy SigenStor BAT 10.0",
 };
