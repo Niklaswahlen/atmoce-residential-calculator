@@ -41,6 +41,9 @@ export interface PdfInput {
   /** Garanterad genomströmning totalt (MWh) — bara när data finns för båda systemen. */
   throughputAtmoceMwh?: number | null;
   throughputRefMwh?: number | null;
+  /** Batterisidans pris (ESS, efter GTA) — används för kr/MWh. */
+  throughputEssPriceA?: number | null;
+  throughputEssPriceB?: number | null;
 }
 
 function formatK(v: number): string {
@@ -726,13 +729,15 @@ export async function generateSummaryPdf(input: PdfInput) {
       doc.setTextColor(...INK);
       doc.text(`${fmtNum(bar.v, 1)} MWh`, x + w - 5, by + 3.6, { align: "right" });
     });
-    const kA = atmoceResult.investment / a;
-    const kB = refResult.investment / b;
+    const essA = input.throughputEssPriceA ?? atmoce.essPrice;
+    const essB = input.throughputEssPriceB ?? reference.essPrice;
+    const kA = essA / a;
+    const kB = essB / b;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(...INK);
     doc.text(
-      `Kostnad per MWh (hela anläggningen efter GTA): ${atmoce.name} ${fmtNum(kA)} kr/MWh  ·  ${reference.name} ${fmtNum(kB)} kr/MWh`,
+      `Kostnad per MWh (batteri + installation efter GTA): ${atmoce.name} ${fmtNum(kA)} kr/MWh  ·  ${reference.name} ${fmtNum(kB)} kr/MWh`,
       x + 5,
       y + 35,
     );

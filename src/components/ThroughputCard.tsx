@@ -62,7 +62,7 @@ export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, 
         {hasCost && (
           <div className="rounded-lg border border-atmoce/20 bg-card/60 p-4">
             <p className="mb-3 text-sm font-medium text-foreground">
-              {t("Kostnad per MWh genomströmning (hela anläggningen)", "Cost per MWh throughput (whole system)")}
+              {t("Kostnad per MWh genomströmning (batteri + installation)", "Cost per MWh throughput (battery + installation)")}
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
               <Stat label={atmoceName} value={`${fmtNum(krA)} kr/MWh`} sub={`${fmtNum(investmentA!)} kr ÷ ${fmtNum(throughputA, 1)} MWh`} accent />
@@ -76,8 +76,8 @@ export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, 
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
               {t(
-                "Total investering efter GTA (solpaneler, växelriktare, batteri och installation) delat med batteriets garanterade livstidsenergi.",
-                "Total investment after tax credit (panels, inverters, battery and installation) divided by the battery's guaranteed lifetime energy.",
+                "Batterisidans pris efter GTA (batteri, installation och kabelage — utan solpaneler och växelriktare) delat med batteriets garanterade livstidsenergi.",
+                "Battery-side price after tax credit (battery, installation and cabling — excluding panels and inverter) divided by the battery's guaranteed lifetime energy.",
               )}
             </p>
           </div>
