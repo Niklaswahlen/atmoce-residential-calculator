@@ -494,6 +494,7 @@ function Index() {
         throughputRefMwh: throughputB,
         throughputEssPriceA,
         throughputEssPriceB,
+        throughputRefLabel: refModuleLabel,
         chartElement: npvChartRef.current ?? null,
       });
       toast.success(t("PDF genererad", "PDF generated"));
