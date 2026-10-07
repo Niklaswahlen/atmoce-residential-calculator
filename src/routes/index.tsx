@@ -524,7 +524,7 @@ function Index() {
                 <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("Anläggning & Atmoce batteri", "System & Atmoce battery")}
                 </div>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-nowrap justify-center gap-1.5">
                   {[
                     { panels: 10, modules: 1 },
                     { panels: 15, modules: 2 },
@@ -564,10 +564,9 @@ function Index() {
                     suffix="W"
                   />
                 </div>
-                <div className="mx-auto max-w-sm rounded-md bg-muted px-2.5 py-1.5 text-center text-xs">
-                  <span className="text-muted-foreground">{t("Total:", "Total:")} </span>
-                  <span className="font-mono font-semibold">{fmtNum(kWp, 2)} kWp</span>
-                </div>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  {t("Totalt", "Total")} <b className="text-foreground">{fmtNum(kWp, 2)} kWp</b>
+                </p>
               </div>
 
               {/* Rad 2 vänster: Atmoce batterimodell */}
@@ -596,15 +595,6 @@ function Index() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {atmoceOption && (
-                    <p className="text-center text-[11px] text-muted-foreground">
-                      {t("Garanti", "Warranty")}: {atmoceOption.warrantyYears ?? "—"}{" "}
-                      {t("år", "yrs")}
-                      {atmoceOption.warrantyCycles
-                        ? ` · ${fmtNum(atmoceOption.warrantyCycles, 0)} ${t("cykler", "cycles")}`
-                        : ""}
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -663,11 +653,6 @@ function Index() {
                     suffix={`${fmtNum(atmoce.batteryKwh, 1)} kWh`}
                   />
                 )}
-                <div className="rounded-md bg-muted px-2.5 py-1.5 text-center font-mono text-xs">
-                  Atmoce <b>{fmtNum(atmoce.batteryKwh, 1)} kWh</b>{" "}
-                  <span className="text-muted-foreground">↔</span>{" "}
-                  {reference.short} <b>{fmtNum(reference.batteryKwh, 1)} kWh</b>
-                </div>
               </div>
 
               {/* Rad 3 höger: referens batterimoduler */}
@@ -728,12 +713,6 @@ function Index() {
                       min={1}
                       suffix={`${fmtNum(reference.batteryKwh, 1)} kWh`}
                     />
-                    <div className="rounded-md bg-muted px-2.5 py-1.5 text-center font-mono text-xs">
-                      {refModules} × {fmtNum(refUnitKwh, 2)} kWh ={" "}
-                      <span className="font-semibold">
-                        {fmtNum(reference.batteryKwh, 2)} kWh
-                      </span>
-                    </div>
                   </>
                 )}
               </div>
@@ -1450,13 +1429,11 @@ function PriceField({
           kr
         </span>
       </div>
-      <div className={`text-[11px] text-muted-foreground${center ? " text-center" : ""}`}>
-        {hideEstimate
-          ? "\u00A0"
-          : isOverride
-          ? `Estimat: ${fmtSek(estimated)}`
-          : "Använder modellens estimat"}
-      </div>
+      {!hideEstimate && isOverride && (
+        <div className={`text-[11px] text-muted-foreground${center ? " text-center" : ""}`}>
+          {`Estimat: ${fmtSek(estimated)}`}
+        </div>
+      )}
     </div>
   );
 }
