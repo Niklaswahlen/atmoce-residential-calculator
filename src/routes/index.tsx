@@ -1048,8 +1048,8 @@ function Index() {
                 throughputB={throughputB}
                 modulesA={atmoceModules}
                 modulesB={refModules}
-                investmentA={atmoceResult.investment}
-                investmentB={refResult.investment}
+                investmentA={throughputEssPriceA}
+                investmentB={throughputEssPriceB}
               />
             )}
 
