@@ -836,8 +836,13 @@ function Index() {
         )}
 
 
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div
+          className={`grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 ${
+            !isSimple ? "lg:grid-cols-[320px_minmax(0,1fr)]" : ""
+          }`}
+        >
           {/* Input panel */}
+          {!isSimple && (
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
             {!isSimple && (
             <Card>
@@ -934,6 +939,7 @@ function Index() {
             </Card>
             )}
           </aside>
+          )}
 
           {/* Results */}
           <section className="space-y-6">
@@ -950,7 +956,7 @@ function Index() {
             </div>
 
             {/* Side-by-side metric cards */}
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="mx-auto grid w-full max-w-5xl gap-4 md:grid-cols-2">
               <SystemCard
                 title={atmoce.name}
                 isAtmoce
@@ -1542,7 +1548,7 @@ function SystemCard({
       }
     >
       <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="flex items-center justify-between">
           <CardTitle className="text-base">{title}</CardTitle>
           {isAtmoce && (
             <span className="rounded-full bg-atmoce px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-foreground">
@@ -1585,7 +1591,7 @@ function Metric({
   big?: boolean;
 }) {
   return (
-    <div className="text-center">
+    <div>
       <div className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
