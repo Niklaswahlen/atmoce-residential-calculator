@@ -1,3 +1,4 @@
+import { ThroughputCard } from "@/components/ThroughputCard";
 import { ATMOCE_THROUGHPUT_MWH, REF_THROUGHPUT_MWH } from "@/data/throughput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -789,7 +790,7 @@ function Index() {
 
         {/* Atmoce-fördelar: fyra vinnarkort — döljs i Base */}
         {!isBase && (
-          <div className={`mb-4 grid gap-3 sm:grid-cols-2 ${throughputA !== null ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <WinCard
             label={t("Ekonomisk vinst", "Economic gain")}
             value={`${extraSavings >= 0 ? "+" : ""}${fmtSek(extraSavings)}`}
@@ -840,17 +841,6 @@ function Index() {
               (atmoceWarrantyYears ?? 0) >= (refWarrantyYears ?? 0)
             }
           />
-          {throughputA !== null && throughputB !== null && (
-            <WinCard
-              label={t("Garanterad genomströmning", "Guaranteed throughput")}
-              value={`${fmtNum(throughputA, 1)} MWh`}
-              note={t(
-                `${atmoceModules} × ${fmtNum(throughputA / atmoceModules, 1)} MWh · ${reference.short}: ${fmtNum(throughputB, 1)} MWh (${refModules} × ${fmtNum(throughputB / refModules, 1)})`,
-                `${atmoceModules} × ${fmtNum(throughputA / atmoceModules, 1)} MWh · ${reference.short}: ${fmtNum(throughputB, 1)} MWh (${refModules} × ${fmtNum(throughputB / refModules, 1)})`,
-              )}
-              positive={throughputA >= throughputB}
-            />
-          )}
           </div>
         )}
 
@@ -1030,6 +1020,17 @@ function Index() {
                 />
               </CardContent>
             </Card>
+            )}
+
+            {!isBase && throughputA !== null && throughputB !== null && (
+              <ThroughputCard
+                atmoceName={atmoce.name}
+                refName={reference.name}
+                throughputA={throughputA}
+                throughputB={throughputB}
+                modulesA={atmoceModules}
+                modulesB={refModules}
+              />
             )}
 
             {!isBase && (
