@@ -1,3 +1,4 @@
+import { ThroughputCard } from "@/components/ThroughputCard";
 import { ATMOCE_THROUGHPUT_MWH, REF_THROUGHPUT_MWH } from "@/data/throughput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
