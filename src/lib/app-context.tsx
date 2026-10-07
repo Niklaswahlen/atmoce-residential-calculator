@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type Language = "sv" | "en";
-export type AppMode = "simple" | "advanced";
+export type AppMode = "base" | "simple" | "advanced";
 
 interface AppCtx {
   lang: Language;
@@ -24,7 +24,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const l = localStorage.getItem(LS_LANG);
       if (l === "sv" || l === "en") setLangState(l);
       const m = localStorage.getItem(LS_MODE);
-      if (m === "simple" || m === "advanced") setModeState(m);
+      if (m === "base" || m === "simple" || m === "advanced") setModeState(m);
     } catch {
       // ignore
     }
