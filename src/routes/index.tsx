@@ -452,8 +452,15 @@ function Index() {
   const throughputB = tpRefPerModule && tpAtmocePerModule ? tpRefPerModule * refModules : null;
   // Batterisidans pris (ESS: batteri + installation, efter GTA) — används för kr/MWh.
   // Vid manuell pris-override eller eget system används det inmatade priset.
+  // Referenssystem som ännu saknar rad i prislistan får inget batteripris som
+  // följer antal moduler — då utelämnas kostnad per MWh i stället för vilseledning.
   const throughputEssPriceA = atmocePriceOverride ?? atmoce.essPrice;
-  const throughputEssPriceB = isCustomRef ? customPrice : (refPriceOverride ?? referenceFromModel.essPrice);
+  const refPriced = isCustomRef || Boolean(refConfig);
+  const throughputEssPriceB = !refPriced
+    ? undefined
+    : isCustomRef
+      ? customPrice
+      : (refPriceOverride ?? referenceFromModel.essPrice);
   // Batterimodellens namn med kapacitet, alltid i samma form: "Atmoce 8 kWh",
   // "Atmoce M-ELV 7 kWh", "Dyness Stack100 5,12 kWh" — utan parenteser.
   const withKwh = (name: string, kwh: number) =>
