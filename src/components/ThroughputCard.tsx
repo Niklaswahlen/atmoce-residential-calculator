@@ -63,6 +63,22 @@ export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, 
               "Capacity (kWh) is how much the battery holds. Throughput (MWh) is how much energy the manufacturer guarantees over the battery's lifetime, with at least 60 % remaining capacity. Higher means more energy for your money.",
             )}
           </p>
+          <ul className="mt-3 space-y-1.5 text-muted-foreground">
+            <li>
+              <span className="font-semibold text-foreground">{atmoceName}:</span>{" "}
+              {t(
+                `en modul har ${fmtNum(throughputA / modulesA, 1)} MWh garanterad genomströmning. ${modulesA} moduler × ${fmtNum(throughputA / modulesA, 1)} MWh = ${fmtNum(throughputA, 1)} MWh totalt.`,
+                `one module has ${fmtNum(throughputA / modulesA, 1)} MWh guaranteed throughput. ${modulesA} modules × ${fmtNum(throughputA / modulesA, 1)} MWh = ${fmtNum(throughputA, 1)} MWh total.`,
+              )}
+            </li>
+            <li>
+              <span className="font-semibold text-foreground">{refName}:</span>{" "}
+              {t(
+                `en modul har ${fmtNum(throughputB / modulesB, 1)} MWh garanterad genomströmning. ${modulesB} moduler × ${fmtNum(throughputB / modulesB, 1)} MWh = ${fmtNum(throughputB, 1)} MWh totalt.`,
+                `one module has ${fmtNum(throughputB / modulesB, 1)} MWh guaranteed throughput. ${modulesB} modules × ${fmtNum(throughputB / modulesB, 1)} MWh = ${fmtNum(throughputB, 1)} MWh total.`,
+              )}
+            </li>
+          </ul>
         </div>
       </CardContent>
     </Card>
