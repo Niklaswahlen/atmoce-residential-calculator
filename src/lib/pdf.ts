@@ -38,6 +38,9 @@ export interface PdfInput {
   atmoceBatteryWarrantyYears?: number | null;
   atmoceBatteryWarrantyCycles?: number | null;
   chartElement?: HTMLElement | null;
+  /** Garanterad genomströmning totalt (MWh) — bara när data finns för båda systemen. */
+  throughputAtmoceMwh?: number | null;
+  throughputRefMwh?: number | null;
 }
 
 function formatK(v: number): string {
@@ -427,6 +430,16 @@ export async function generateSummaryPdf(input: PdfInput) {
       b: fmtWarranty(refBattWarrantyYears, refBattWarrantyCycles),
       winner: cmpHigher(atmoceBattWarrantyYears ?? 0, refBattWarrantyYears ?? 0),
     },
+    ...(input.throughputAtmoceMwh != null && input.throughputRefMwh != null
+      ? [
+          {
+            label: "Garanterad genomströmning",
+            a: `${fmtNum(input.throughputAtmoceMwh, 1)} MWh`,
+            b: `${fmtNum(input.throughputRefMwh, 1)} MWh`,
+            winner: cmpHigher(input.throughputAtmoceMwh, input.throughputRefMwh),
+          } as Cmp,
+        ]
+      : []),
     {
       label: "Pris per kWh batteri",
       a: `${fmtNum(pricePerKwhA)} kr/kWh`,

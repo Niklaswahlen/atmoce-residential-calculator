@@ -1,3 +1,4 @@
+import { ATMOCE_THROUGHPUT_MWH, REF_THROUGHPUT_MWH } from "@/data/throughput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -438,6 +439,11 @@ function Index() {
     atmoceOption?.warrantyCycles ?? atmoce.batteryWarrantyCycles ?? null;
   const refWarrantyYears = reference.batteryWarrantyYears ?? null;
   const refWarrantyCycles = reference.batteryWarrantyCycles ?? null;
+  const tpRefPerModule = !isCustomRef ? REF_THROUGHPUT_MWH[referenceId] : undefined;
+  const tpAtmocePerModule = atmoceBatteryId ? ATMOCE_THROUGHPUT_MWH[atmoceBatteryId] : undefined;
+  const throughputA =
+    tpRefPerModule && tpAtmocePerModule ? tpAtmocePerModule * atmoceModules : null;
+  const throughputB = tpRefPerModule && tpAtmocePerModule ? tpRefPerModule * refModules : null;
 
   // Applicera en snabbmall: panelantal + rimligt batteri, och låt
   // referenssystemet automatiskt matcha den nya kapaciteten.
@@ -467,7 +473,9 @@ function Index() {
         wpPerPanel: params.wpPerPanel,
         atmoceBatteryWarrantyYears: atmoceWarrantyYears,
         atmoceBatteryWarrantyCycles: atmoceWarrantyCycles,
-          chartElement: npvChartRef.current ?? null,
+        throughputAtmoceMwh: throughputA,
+        throughputRefMwh: throughputB,
+        chartElement: npvChartRef.current ?? null,
       });
       toast.success(t("PDF genererad", "PDF generated"));
     } catch (e) {
@@ -781,7 +789,7 @@ function Index() {
 
         {/* Atmoce-fördelar: fyra vinnarkort — döljs i Base */}
         {!isBase && (
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className={`mb-4 grid gap-3 sm:grid-cols-2 ${throughputA !== null ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>
           <WinCard
             label={t("Ekonomisk vinst", "Economic gain")}
             value={`${extraSavings >= 0 ? "+" : ""}${fmtSek(extraSavings)}`}
@@ -832,6 +840,17 @@ function Index() {
               (atmoceWarrantyYears ?? 0) >= (refWarrantyYears ?? 0)
             }
           />
+          {throughputA !== null && throughputB !== null && (
+            <WinCard
+              label={t("Garanterad genomströmning", "Guaranteed throughput")}
+              value={`${fmtNum(throughputA, 1)} MWh`}
+              note={t(
+                `${atmoceModules} × ${fmtNum(throughputA / atmoceModules, 1)} MWh · ${reference.short}: ${fmtNum(throughputB, 1)} MWh (${refModules} × ${fmtNum(throughputB / refModules, 1)})`,
+                `${atmoceModules} × ${fmtNum(throughputA / atmoceModules, 1)} MWh · ${reference.short}: ${fmtNum(throughputB, 1)} MWh (${refModules} × ${fmtNum(throughputB / refModules, 1)})`,
+              )}
+              positive={throughputA >= throughputB}
+            />
+          )}
           </div>
         )}
 
