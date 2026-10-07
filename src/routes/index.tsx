@@ -789,7 +789,7 @@ function Index() {
 
         {/* Atmoce-fördelar: fyra vinnarkort — döljs i Base */}
         {!isBase && (
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className={`mb-4 grid gap-3 sm:grid-cols-2 ${throughputA !== null ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}>
           <WinCard
             label={t("Ekonomisk vinst", "Economic gain")}
             value={`${extraSavings >= 0 ? "+" : ""}${fmtSek(extraSavings)}`}
