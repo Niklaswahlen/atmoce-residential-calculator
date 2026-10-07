@@ -24,5 +24,5 @@ export const REF_THROUGHPUT_MWH: Record<string, number> = {
  */
 export const REF_THROUGHPUT_LABEL: Record<string, string> = {
   solis_dyness: "Dyness Stack100",
-  sigenergy: "Sigenergy SigenStor BAT 10.0",
+  sigenergy: "Sigenergy SigenStor",
 };
