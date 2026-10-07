@@ -445,6 +445,17 @@ function Index() {
   const throughputA =
     tpRefPerModule && tpAtmocePerModule ? tpAtmocePerModule * atmoceModules : null;
   const throughputB = tpRefPerModule && tpAtmocePerModule ? tpRefPerModule * refModules : null;
+  // Batterimodellens namn med kapacitet, t.ex. "Atmoce 8 kWh" eller "Atmoce M-ELV (7 kWh)".
+  const withKwh = (name: string, kwh: number) =>
+    /\d\s*kwh/i.test(name) ? name : `${name} (${fmtNum(kwh, kwh % 1 === 0 ? 0 : 2)} kWh)`;
+  const atmoceModuleLabel = atmoceOption
+    ? withKwh(atmoceOption.name, atmoceOption.kwhPerModule)
+    : atmoce.name;
+  const refModuleLabel = !isCustomRef
+    ? REF_THROUGHPUT_LABEL[referenceId]
+      ? withKwh(REF_THROUGHPUT_LABEL[referenceId], refUnitKwh)
+      : reference.name
+    : reference.name;
 
   // Applicera en snabbmall: panelantal + rimligt batteri, och låt
   // referenssystemet automatiskt matcha den nya kapaciteten.
@@ -1024,8 +1035,8 @@ function Index() {
 
             {!isBase && throughputA !== null && throughputB !== null && (
               <ThroughputCard
-                atmoceName={atmoce.name}
-                refName={REF_THROUGHPUT_LABEL[referenceId] ?? reference.name}
+                atmoceName={atmoceModuleLabel}
+                refName={refModuleLabel}
                 throughputA={throughputA}
                 throughputB={throughputB}
                 modulesA={atmoceModules}
