@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtNum } from "@/lib/calc";
+import type { ReactNode } from "react";
 import { useT } from "@/lib/app-context";
 
 interface Props {
@@ -69,9 +70,10 @@ export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, 
               <Stat label={refName} value={`${fmtNum(krB)} kr/MWh`} sub={`${fmtNum(investmentB!)} kr ÷ ${fmtNum(throughputB, 1)} MWh`} />
               <Stat
                 label={t("Atmoce billigare per MWh", "Atmoce cheaper per MWh")}
-                value={`${krPct >= 0 ? "-" : "+"}${fmtNum(Math.abs(krB - krA))} kr`}
-                sub={`${fmtNum(Math.abs(krPct), 0)} % ${krPct >= 0 ? t("lägre", "lower") : t("högre", "higher")}`}
+                big
                 accent={krPct >= 0}
+                value={`${krPct >= 0 ? "-" : "+"}${fmtNum(Math.abs(krPct), 0)} %`}
+                sub={`${krPct >= 0 ? t("lägre", "lower") : t("högre", "higher")} per MWh · ${fmtNum(Math.abs(krB - krA))} kr/MWh`}
               />
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
@@ -115,11 +117,25 @@ export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, 
   );
 }
 
-function Stat({ label, value, sub, accent }: { label: string; value: string; sub: string; accent?: boolean }) {
+function Stat({
+  label,
+  value,
+  sub,
+  accent,
+  big,
+}: {
+  label: string;
+  value: ReactNode;
+  sub: string;
+  accent?: boolean;
+  big?: boolean;
+}) {
   return (
     <div className="min-w-0">
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={`font-display text-2xl font-semibold tabular-nums ${accent ? "text-atmoce" : "text-foreground"}`}>
+      <div
+        className={`flex min-h-[3.5rem] items-end font-display font-semibold tabular-nums leading-none ${big ? "text-5xl sm:text-6xl" : "text-2xl"} ${accent ? "text-atmoce" : "text-foreground"}`}
+      >
         {value}
       </div>
       <div className="text-xs text-muted-foreground">{sub}</div>
