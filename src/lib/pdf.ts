@@ -679,7 +679,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     const a = tpA as number;
     const b = tpB as number;
     const w = pageW - 2 * margin;
-    const h = 32;
+    const h = 40;
     const x = margin;
     const y = cursorY;
     doc.setDrawColor(...INK);
@@ -726,7 +726,17 @@ export async function generateSummaryPdf(input: PdfInput) {
       doc.setTextColor(...INK);
       doc.text(`${fmtNum(bar.v, 1)} MWh`, x + w - 5, by + 3.6, { align: "right" });
     });
-    cursorY += h + 10;
+    const kA = atmoceResult.investment / a;
+    const kB = refResult.investment / b;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...INK);
+    doc.text(
+      `Kostnad per MWh (hela anläggningen efter GTA): ${atmoce.name} ${fmtNum(kA)} kr/MWh  ·  ${reference.name} ${fmtNum(kB)} kr/MWh`,
+      x + 5,
+      y + 35,
+    );
+    cursorY += h + 8;
   }
 
   // ---- USP: 2×3-rutnät av ljusa kort ----
