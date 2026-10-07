@@ -69,9 +69,18 @@ export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, 
               <Stat label={refName} value={`${fmtNum(krB)} kr/MWh`} sub={`${fmtNum(investmentB!)} kr ÷ ${fmtNum(throughputB, 1)} MWh`} />
               <Stat
                 label={t("Atmoce billigare per MWh", "Atmoce cheaper per MWh")}
-                value={`${krPct >= 0 ? "-" : "+"}${fmtNum(Math.abs(krB - krA))} kr`}
-                sub={`${fmtNum(Math.abs(krPct), 0)} % ${krPct >= 0 ? t("lägre", "lower") : t("högre", "higher")}`}
+                big
                 accent={krPct >= 0}
+                value={
+                  <>
+                    {krPct >= 0 ? "-" : "+"}
+                    {fmtNum(Math.abs(krPct), 0)} %{" "}
+                    <span className="text-2xl font-semibold">
+                      {krPct >= 0 ? t("lägre", "lower") : t("högre", "higher")}
+                    </span>
+                  </>
+                }
+                sub={`${fmtNum(Math.abs(krB - krA))} kr/MWh ${krPct >= 0 ? t("lägre", "lower") : t("högre", "higher")}`}
               />
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
