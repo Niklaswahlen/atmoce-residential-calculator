@@ -445,9 +445,10 @@ function Index() {
   const throughputA =
     tpRefPerModule && tpAtmocePerModule ? tpAtmocePerModule * atmoceModules : null;
   const throughputB = tpRefPerModule && tpAtmocePerModule ? tpRefPerModule * refModules : null;
-  // Batterimodellens namn med kapacitet, t.ex. "Atmoce 8 kWh" eller "Atmoce M-ELV (7 kWh)".
+  // Batterimodellens namn med kapacitet, alltid i samma form: "Atmoce 8 kWh",
+  // "Atmoce M-ELV 7 kWh", "Dyness Stack100 5,12 kWh" — utan parenteser.
   const withKwh = (name: string, kwh: number) =>
-    /\d\s*kwh/i.test(name) ? name : `${name} (${fmtNum(kwh, kwh % 1 === 0 ? 0 : 2)} kWh)`;
+    /\d\s*kwh/i.test(name) ? name : `${name} ${fmtNum(kwh, kwh % 1 === 0 ? 0 : 2)} kWh`;
   const atmoceModuleLabel = atmoceOption
     ? withKwh(atmoceOption.name, atmoceOption.kwhPerModule)
     : atmoce.name;
