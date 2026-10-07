@@ -17,7 +17,7 @@ export const ATMOCE_THROUGHPUT_MWH: Record<string, number> = {
 export const REF_THROUGHPUT_MWH: Record<string, number> = {
   solis_dyness: 45.272 / 3,
   sigenergy: 30.66,
-  huawei: 19.23,
+  huawei: 19.23, saj_hs3: 15.3,
 };
 
 /**
@@ -27,7 +27,7 @@ export const REF_THROUGHPUT_MWH: Record<string, number> = {
 export const REF_THROUGHPUT_LABEL: Record<string, string> = {
   solis_dyness: "Dyness Stack100",
   sigenergy: "Sigenergy SigenStor",
-  huawei: "Huawei LUNA2000",
+  huawei: "Huawei LUNA2000", saj_hs3: "SAJ BU3",
 };
 
 /**
