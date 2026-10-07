@@ -44,6 +44,8 @@ export interface PdfInput {
   /** Batterisidans pris (ESS, efter GTA) — används för kr/MWh. */
   throughputEssPriceA?: number | null;
   throughputEssPriceB?: number | null;
+  /** Batterimärkets namn i genomströmningsgrafen, t.ex. "Dyness Stack100". */
+  throughputRefLabel?: string | null;
 }
 
 function formatK(v: number): string {
@@ -713,7 +715,7 @@ export async function generateSummaryPdf(input: PdfInput) {
     const max = Math.max(a, b);
     const bars: { label: string; v: number; color: [number, number, number] }[] = [
       { label: atmoce.name, v: a, color: CORAL },
-      { label: "Dyness Stack100", v: b, color: INK },
+      { label: input.throughputRefLabel ?? reference.name, v: b, color: INK },
     ];
     bars.forEach((bar, i) => {
       const by = y + 13 + i * 8.5;
