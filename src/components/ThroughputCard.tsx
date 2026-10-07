@@ -9,13 +9,19 @@ interface Props {
   throughputB: number;
   modulesA: number;
   modulesB: number;
+  investmentA?: number;
+  investmentB?: number;
 }
 
-export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, modulesA, modulesB }: Props) {
+export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, modulesA, modulesB, investmentA, investmentB }: Props) {
   const t = useT();
   const diff = throughputA - throughputB;
   const pct = throughputB > 0 ? (diff / throughputB) * 100 : 0;
   const max = Math.max(throughputA, throughputB, 1);
+  const hasCost = investmentA != null && investmentB != null && throughputA > 0 && throughputB > 0;
+  const krA = hasCost ? investmentA! / throughputA : 0;
+  const krB = hasCost ? investmentB! / throughputB : 0;
+  const krPct = hasCost && krB > 0 ? ((krB - krA) / krB) * 100 : 0;
 
   return (
     <Card className="border-atmoce/40 bg-atmoce-soft/30">
@@ -52,6 +58,30 @@ export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, 
           <Bar label={atmoceName} value={throughputA} max={max} accent />
           <Bar label={refName} value={throughputB} max={max} />
         </div>
+
+        {hasCost && (
+          <div className="rounded-lg border border-atmoce/20 bg-card/60 p-4">
+            <p className="mb-3 text-sm font-medium text-foreground">
+              {t("Kostnad per MWh genomströmning (hela anläggningen)", "Cost per MWh throughput (whole system)")}
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+              <Stat label={atmoceName} value={`${fmtNum(krA)} kr/MWh`} sub={`${fmtNum(investmentA!)} kr ÷ ${fmtNum(throughputA, 1)} MWh`} accent />
+              <Stat label={refName} value={`${fmtNum(krB)} kr/MWh`} sub={`${fmtNum(investmentB!)} kr ÷ ${fmtNum(throughputB, 1)} MWh`} />
+              <Stat
+                label={t("Atmoce billigare per MWh", "Atmoce cheaper per MWh")}
+                value={`${krPct >= 0 ? "-" : "+"}${fmtNum(Math.abs(krB - krA))} kr`}
+                sub={`${fmtNum(Math.abs(krPct), 0)} % ${krPct >= 0 ? t("lägre", "lower") : t("högre", "higher")}`}
+                accent={krPct >= 0}
+              />
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {t(
+                "Total investering efter GTA (solpaneler, växelriktare, batteri och installation) delat med batteriets garanterade livstidsenergi.",
+                "Total investment after tax credit (panels, inverters, battery and installation) divided by the battery's guaranteed lifetime energy.",
+              )}
+            </p>
+          </div>
+        )}
 
         <div className="rounded-lg border border-atmoce/20 bg-card/60 p-4 text-sm">
           <p className="font-medium text-foreground">
