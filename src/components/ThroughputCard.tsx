@@ -72,7 +72,7 @@ export function ThroughputCard({ atmoceName, refName, throughputA, throughputB, 
                 label={t("Atmoce billigare per MWh", "Atmoce cheaper per MWh")}
                 big
                 accent={krPct >= 0}
-                value={`${krPct >= 0 ? "-" : "+"}${fmtNum(Math.abs(krPct), 0)} %`}
+                value={`${krPct >= 0 ? "" : "+"}${fmtNum(Math.abs(krPct), 0)} %`}
                 sub={`${krPct >= 0 ? t("lägre", "lower") : t("högre", "higher")} per MWh · ${fmtNum(Math.abs(krB - krA))} kr/MWh`}
               />
             </div>
