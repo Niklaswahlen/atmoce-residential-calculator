@@ -731,18 +731,23 @@ export async function generateSummaryPdf(input: PdfInput) {
       doc.setTextColor(...INK);
       doc.text(`${fmtNum(bar.v, 1)} MWh`, x + w - 5, by + 3.6, { align: "right" });
     });
-    const essA = input.throughputEssPriceA ?? atmoce.essPrice;
-    const essB = input.throughputEssPriceB ?? reference.essPrice;
-    const kA = essA / a;
-    const kB = essB / b;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(...INK);
-    doc.text(
-      `Kostnad per MWh (batteri + installation efter GTA): ${atmoce.name} ${fmtNum(kA)} kr/MWh  ·  ${reference.name} ${fmtNum(kB)} kr/MWh`,
-      x + 5,
-      y + 35,
-    );
+    // Kostnad per MWh kräver att båda batteriprisen följer antal moduler.
+    // Referenssystem utan rad i prislistan skapar ett sådant pris — då utelämnas
+    // raden i stället för att dela ett fast pris med ett svällande energital.
+    const essA = input.throughputEssPriceA ?? null;
+    const essB = input.throughputEssPriceB ?? null;
+    if (essA !== null && essB !== null) {
+      const kA = essA / a;
+      const kB = essB / b;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...INK);
+      doc.text(
+        `Kostnad per MWh (batteri + installation efter GTA): ${atmoce.name} ${fmtNum(kA)} kr/MWh  ·  ${reference.name} ${fmtNum(kB)} kr/MWh`,
+        x + 5,
+        y + 35,
+      );
+    }
     cursorY += h + 8;
   }
 

@@ -1,5 +1,10 @@
 import { ThroughputCard } from "@/components/ThroughputCard";
-import { ATMOCE_THROUGHPUT_MWH, REF_THROUGHPUT_LABEL, REF_THROUGHPUT_MWH } from "@/data/throughput";
+import {
+  ATMOCE_THROUGHPUT_MWH,
+  REF_MODULE_KWH,
+  REF_THROUGHPUT_LABEL,
+  REF_THROUGHPUT_MWH,
+} from "@/data/throughput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -241,7 +246,7 @@ function Index() {
   const atmoceBatteryId =
     atmoceBatteryConfigId ?? atmoceConfig?.defaultBatteryConfigId ?? undefined;
   const atmoceUnitKwh = unitKwhFor(atmoceConfig, atmoceBatteryId) || 7;
-  const refUnitKwh = refConfig?.batteryKwhPerModule || 5.12;
+  const refUnitKwh = refConfig?.batteryKwhPerModule || REF_MODULE_KWH[referenceId] || 5.12;
 
   const atmoceModulesDefault = atmoceConfig?.defaultBatteryModules ?? 2;
   const atmoceOption = atmoceBatteryOptions.find((o) => o.configId === atmoceBatteryId);
