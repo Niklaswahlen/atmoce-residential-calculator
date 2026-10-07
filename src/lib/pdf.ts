@@ -637,10 +637,14 @@ export async function generateSummaryPdf(input: PdfInput) {
 
   cursorY = 27;
 
+  const tpA = input.throughputAtmoceMwh ?? null;
+  const tpB = input.throughputRefMwh ?? null;
+  const hasTp = tpA !== null && tpB !== null && tpA > 0 && tpB > 0;
+
   // ---- NPV-graf: större kort ----
   {
     const availW = pageW - 2 * margin;
-    const chartH = 108;
+    const chartH = hasTp ? 76 : 108;
     const atmoceSeries = [
       -atmoceResult.investment,
       ...atmoceResult.rows.map((r) => r.cumulativeNpv),
@@ -667,7 +671,62 @@ export async function generateSummaryPdf(input: PdfInput) {
       title: `Ackumulerat nuvärde över ${years} år (kr)`,
       takeaway,
     });
-    cursorY += chartH + 14;
+    cursorY += chartH + (hasTp ? 6 : 14);
+  }
+
+  // ---- Garanterad genomströmning: stapelgraf ----
+  if (hasTp) {
+    const a = tpA as number;
+    const b = tpB as number;
+    const w = pageW - 2 * margin;
+    const h = 32;
+    const x = margin;
+    const y = cursorY;
+    doc.setDrawColor(...INK);
+    doc.setLineWidth(0.3);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x, y, w, h, 1.5, 1.5, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...PLUM);
+    doc.text("Garanterad genomströmning (livstidsenergi, MWh)", x + 5, y + 7.5);
+
+    const diff = a - b;
+    const pct = b > 0 ? diff / b : 0;
+    doc.setFontSize(8);
+    doc.setTextColor(...(diff >= 0 ? GREEN_TEXT : INK));
+    doc.text(
+      `${diff >= 0 ? "+" : "-"}${fmtNum(Math.abs(diff), 1)} MWh (${diff >= 0 ? "+" : "-"}${fmtPct(Math.abs(pct), 0)})`,
+      x + w - 5,
+      y + 7.5,
+      { align: "right" },
+    );
+
+    const labelW = 42;
+    const valW = 22;
+    const barX = x + 5 + labelW;
+    const barMaxW = w - 10 - labelW - valW;
+    const max = Math.max(a, b);
+    const bars: { label: string; v: number; color: [number, number, number] }[] = [
+      { label: atmoce.name, v: a, color: CORAL },
+      { label: "Dyness Stack100", v: b, color: INK },
+    ];
+    bars.forEach((bar, i) => {
+      const by = y + 13 + i * 8.5;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...INK);
+      const lbl = doc.splitTextToSize(bar.label, labelW - 2)[0];
+      doc.text(lbl, x + 5, by + 3.6);
+      doc.setFillColor(...GRID);
+      doc.roundedRect(barX, by, barMaxW, 5, 1, 1, "F");
+      doc.setFillColor(...bar.color);
+      doc.roundedRect(barX, by, Math.max(2, (bar.v / max) * barMaxW), 5, 1, 1, "F");
+      doc.setTextColor(...INK);
+      doc.text(`${fmtNum(bar.v, 1)} MWh`, x + w - 5, by + 3.6, { align: "right" });
+    });
+    cursorY += h + 10;
   }
 
   // ---- USP: 2×3-rutnät av ljusa kort ----
