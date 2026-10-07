@@ -42,6 +42,14 @@ export function AppHeader({ subtitle, right, showModeToggle = true }: Props) {
           {showModeToggle && (
             <div className="flex overflow-hidden rounded-md border border-white/30 bg-white/10 text-xs backdrop-blur">
               <button
+                onClick={() => setMode("base")}
+                className={`px-3 py-1.5 font-medium transition ${
+                  mode === "base" ? "bg-white text-foreground" : "text-white hover:bg-white/10"
+                }`}
+              >
+                Base
+              </button>
+              <button
                 onClick={() => setMode("simple")}
                 className={`px-3 py-1.5 font-medium transition ${
                   mode === "simple" ? "bg-white text-foreground" : "text-white hover:bg-white/10"

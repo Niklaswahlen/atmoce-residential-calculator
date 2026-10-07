@@ -202,7 +202,8 @@ function NumField({
 function Index() {
   const { mode } = useApp();
   const t = useT();
-  const isSimple = mode === "simple";
+  const isBase = mode === "base";
+  const isSimple = mode !== "advanced";
   const [params, setParams] = useState<CalcParams>(DEFAULT_PARAMS);
   const [refChoice, setRefChoice] = useState<SystemId | "custom">("solis_dyness");
   const isCustomRef = refChoice === "custom";
@@ -999,6 +1000,7 @@ function Index() {
             </div>
 
             {/* Delta strip */}
+            {!isBase && (
             <Card className="border-l-4 border-l-atmoce">
               <CardContent className="grid gap-4 p-5 sm:grid-cols-3">
                 <DeltaItem
@@ -1022,7 +1024,9 @@ function Index() {
                 />
               </CardContent>
             </Card>
+            )}
 
+            {!isBase && (
             <SnowMeltCard
               state={snowState}
               onChange={setSnowState}
@@ -1033,6 +1037,7 @@ function Index() {
               years={params.years}
               compact={isSimple}
             />
+            )}
 
             {!isSimple && (
             <PanelLevelBonusCard
@@ -1123,7 +1128,7 @@ function Index() {
             )}
 
             {/* Cumulative NPV chart — like reference image */}
-            {!isSimple && (
+            {(!isSimple || isBase) && (
             <Card>
               <CardHeader>
                 <CardTitle>
@@ -1191,6 +1196,7 @@ function Index() {
             )}
 
             {/* Cashflow chart */}
+            {!isBase && (
             <Card>
               <CardHeader>
                 <CardTitle>
@@ -1237,6 +1243,7 @@ function Index() {
                 </div>
               </CardContent>
             </Card>
+            )}
 
             {/* Production chart */}
             {!isSimple && (
