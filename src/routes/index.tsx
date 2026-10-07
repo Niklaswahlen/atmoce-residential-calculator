@@ -1,5 +1,5 @@
 import { ThroughputCard } from "@/components/ThroughputCard";
-import { ATMOCE_THROUGHPUT_MWH, REF_THROUGHPUT_MWH } from "@/data/throughput";
+import { ATMOCE_THROUGHPUT_MWH, REF_THROUGHPUT_LABEL, REF_THROUGHPUT_MWH } from "@/data/throughput";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -1025,7 +1025,7 @@ function Index() {
             {!isBase && throughputA !== null && throughputB !== null && (
               <ThroughputCard
                 atmoceName={atmoce.name}
-                refName={reference.name}
+                refName={REF_THROUGHPUT_LABEL[referenceId] ?? reference.name}
                 throughputA={throughputA}
                 throughputB={throughputB}
                 modulesA={atmoceModules}

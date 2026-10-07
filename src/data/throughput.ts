@@ -12,3 +12,11 @@ export const ATMOCE_THROUGHPUT_MWH: Record<string, number> = {
 export const REF_THROUGHPUT_MWH: Record<string, number> = {
   solis_dyness: 45.272 / 3,
 };
+
+/**
+ * Referenssystem → batteriets namn. Genomströmningen är ett batteriegenskap,
+ * så rutan nämner bara batterimärket, inte växelriktaren i systemnamnet.
+ */
+export const REF_THROUGHPUT_LABEL: Record<string, string> = {
+  solis_dyness: "Dyness Stack100",
+};
