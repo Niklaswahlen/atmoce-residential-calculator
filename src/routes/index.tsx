@@ -587,12 +587,12 @@ function Index() {
                 </div>
                 <div className="mx-auto grid max-w-sm grid-cols-2 gap-2">
                   <NumField
-                    center
+                     center
                     label={t("Antal solpaneler", "Number of solar panels")}
                     value={params.panels}
                     onChange={set("panels")}
                     editable
-                    min={1}
+                    min={0}
                   />
                   <NumField
                     center
@@ -1388,11 +1388,19 @@ function Index() {
                     />
                     <Row
                       label="kr/Wp"
-                      a={fmtNum(atmoce.pvPrice / (params.panels * params.wpPerPanel), 2)}
-                      b={fmtNum(
-                        reference.pvPrice / (params.panels * params.wpPerPanel),
-                        2,
-                      )}
+                      a={
+                        params.panels === 0
+                          ? "–"
+                          : fmtNum(atmoce.pvPrice / (params.panels * params.wpPerPanel), 2)
+                      }
+                      b={
+                        params.panels === 0
+                          ? "–"
+                          : fmtNum(
+                              reference.pvPrice / (params.panels * params.wpPerPanel),
+                              2,
+                            )
+                      }
                     />
                     <Row
                       label={t("kr/kWh batteri", "kr/kWh battery")}
